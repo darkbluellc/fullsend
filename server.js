@@ -88,12 +88,13 @@ app.get(
 );
 
 app.post("/login", async (req, res) => {
+  console.log(req.body);
   const response_data = await sessions.login(
     pool,
     req.body.username,
     req.body.password
   );
-  console.log("out: " + response_data);
+  console.log(response_data);
   res.send(response_data);
 });
 

@@ -5,6 +5,5 @@ const CONTACTS_IN_GROUP_GET =
 
 exports.getContactsInGroup = (pool, group) =>
   execQuery(pool, CONTACTS_IN_GROUP_GET, group, (results) => {
-    delete ["meta"];
     return results;
   });

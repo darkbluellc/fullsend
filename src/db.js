@@ -12,6 +12,7 @@ const execQuery = async (
     const results = await (args != null ? conn.query(q, args) : conn.query(q));
     const response = { success: true };
     if (responseFunc != null) {
+      delete results["meta"];
       response.data = responseFunc(results);
     }
     return response;

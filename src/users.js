@@ -6,12 +6,10 @@ const USER_GET =
 
 exports.getUsers = (pool) =>
   execQuery(pool, USERS_GET, null, (results) => {
-    delete results["meta"];
     return results;
   });
 
 exports.getUser = (pool, user) =>
   execQuery(pool, USER_GET, user, (results) => {
-    delete ["meta"];
     return results;
   });
