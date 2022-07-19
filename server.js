@@ -3,7 +3,9 @@ const app = express();
 const path = require("path");
 const mariadb = require("mariadb");
 const bodyParser = require("body-parser");
+const crypto = require("crypto");
 const server = require("http").Server(app);
+
 const carriers = require("./src/carriers.js");
 const contacts = require("./src/contacts.js");
 const groups = require("./src/groups.js");
@@ -98,3 +100,11 @@ app.post("/api/sendmessage", async (req, res) => {
 server.listen(PORT, () => {
   console.log("Fullsend is up!");
 });
+
+// const bcrypt = require("bcrypt");
+
+// const salt = bcrypt.genSaltSync(10);
+
+// bcrypt.hash("test", salt, (err, res) => {
+//   console.log("hash: ", res);
+// });
