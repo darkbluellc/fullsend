@@ -20,12 +20,14 @@ exports.login = async (pool, username, password) => {
     const saved_hash = results[0].password;
     bcrypt.compare(password, saved_hash, async (err, res) => {
       if (res) {
+        console.log("res is true");
         const session_id = crypto.randomBytes(20).toString("hex");
         const session_results = await execQuery(pool, SESSION_CREATE, [
           session_id,
           id,
         ]);
-        return "test";
+        console.log(session_results);
+        return session_results;
       }
     });
   });
