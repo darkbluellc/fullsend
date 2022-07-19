@@ -88,7 +88,11 @@ app.get(
 );
 
 app.post("/login", async (req, res) => {
-  const response_data = await sessions.login(pool, req.username, req.password);
+  const response_data = await sessions.login(
+    pool,
+    req.body.username,
+    req.body.password
+  );
   res.send(response_data);
 });
 
@@ -100,11 +104,3 @@ app.post("/api/sendmessage", async (req, res) => {
 server.listen(PORT, () => {
   console.log("Fullsend is up!");
 });
-
-// const bcrypt = require("bcrypt");
-
-// const salt = bcrypt.genSaltSync(10);
-
-// bcrypt.hash("test", salt, (err, res) => {
-//   console.log("hash: ", res);
-// });
