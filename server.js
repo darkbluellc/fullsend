@@ -12,6 +12,8 @@ const users = require("./src/users.js");
 const sessions = require("./src/sessions.js");
 const messages = require("./src/messages.js");
 
+const { version } = require("./package.json");
+
 require("dotenv").config();
 
 const pool = mariadb.createPool({
@@ -33,6 +35,10 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
+app.get("/api", async (req, res) => {
+  res.send(`fullsend server is online<br>v${version}`);
+});
+
 app.get("/api/carriers", async (req, res) => {
   const response_data = await carriers.getCarriers(pool);
   res.send(response_data);
@@ -48,6 +54,14 @@ app.get("/api/groups", async (req, res) => {
   res.send(response_data);
 });
 
+app.get(
+  "/api/group/:group/contacts",
+  async ({ params: { group: group } }, res) => {
+    const response_data = await groups.getContactsInGroup(pool, group);
+    res.send(response_data);
+  }
+);
+
 app.get("/api/titles", async (req, res) => {
   const response_data = await titles.getTitles(pool);
   res.send(response_data);
@@ -55,6 +69,11 @@ app.get("/api/titles", async (req, res) => {
 
 app.get("/api/users", async (req, res) => {
   const response_data = await users.getUsers(pool);
+  res.send(response_data);
+});
+
+app.get("/api/user/:user", async ({ params: { user: user } }, res) => {
+  const response_data = await users.getUser(pool, user);
   res.send(response_data);
 });
 
@@ -74,5 +93,5 @@ app.post("/api/sendmessage", async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log("Headsup is up!");
+  console.log("Fullsend is up!");
 });
