@@ -77,10 +77,13 @@ app.get("/api/user/:user", async ({ params: { user: user } }, res) => {
   res.send(response_data);
 });
 
-app.get("/api/session", async (req, res) => {
-  const response_data = await sessions.getSession(pool);
-  res.send(response_data);
-});
+app.get(
+  "/api/session/:session",
+  async ({ params: { session: session } }, res) => {
+    const response_data = await sessions.getSession(pool, session);
+    res.send(response_data);
+  }
+);
 
 app.post("/login", async (req, res) => {
   const response_data = await sessions.login(pool, req.username, req.password);

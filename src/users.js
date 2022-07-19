@@ -1,8 +1,8 @@
 const { execQuery } = require("./db");
 
-const USERS_GET = "SELECT first_name, last_name, username, admin from users";
+const USERS_GET = "SELECT first_name, last_name, username, admin FROM users";
 const USER_GET =
-  "SELECT first_name, last_name, username, admin from users where id = ?";
+  "SELECT first_name, last_name, username, admin FROM users WHERE id = ?";
 
 exports.getUsers = (pool) =>
   execQuery(pool, USERS_GET, null, (results) => {
