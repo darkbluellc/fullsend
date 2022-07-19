@@ -13,19 +13,23 @@ exports.getUsers = (pool, sessionId) =>
     return results;
   });
 
-exports.login = async (pool, username, password) =>
-  execQuery(pool, AUTHENTICATE, username, (results) => {
+exports.login = async (pool, username, password) => {
+  execQuery(pool, AUTHENTICATE, username, async (results) => {
     delete results["meta"];
     const id = results[0].id;
     const saved_hash = results[0].password;
-    bcrypt.compare(password, saved_hash, (err, res) => {
+    bcrypt.compare(password, saved_hash, async (err, res) => {
       if (res) {
         const session_id = crypto.randomBytes(20).toString("hex");
-        const results = await execQuery(pool, SESSION_CREATE, [session_id, id]);
-        return results;
+        const session_results = await execQuery(pool, SESSION_CREATE, [
+          session_id,
+          id,
+        ]);
+        return "test";
       }
     });
   });
+};
 
 exports.getSession = (pool, session) =>
   execQuery(pool, SESSION_GET, session, (results) => {

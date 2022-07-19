@@ -93,6 +93,7 @@ app.post("/login", async (req, res) => {
     req.body.username,
     req.body.password
   );
+  console.log("out: " + response_data);
   res.send(response_data);
 });
 

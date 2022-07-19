@@ -1,4 +1,10 @@
-async function execQuery(pool, q, args = null, responseFunc = null, db = null) {
+const execQuery = async (
+  pool,
+  q,
+  args = null,
+  responseFunc = null,
+  db = null
+) => {
   let conn;
   try {
     conn = await pool.getConnection();
@@ -17,6 +23,6 @@ async function execQuery(pool, q, args = null, responseFunc = null, db = null) {
       conn.release();
     }
   }
-}
+};
 
 module.exports = { execQuery };
