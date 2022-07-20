@@ -3,7 +3,6 @@ const app = express();
 const path = require("path");
 const mariadb = require("mariadb");
 const bodyParser = require("body-parser");
-const crypto = require("crypto");
 const server = require("http").Server(app);
 
 const carriers = require("./src/carriers.js");
@@ -93,15 +92,20 @@ app.post("/login", async (req, res) => {
     req.body.username,
     req.body.password
   );
-  console.log(response_data);
-  res.send(response_data);
+  if (response_data.success) {
+    const sessionId = await response_data.data;
+    res.send(sessionId);
+  } else {
+    res.send({ success: false });
+  }
 });
 
 app.post("/api/messages/send", async (req, res) => {
-  const userId = await sessions.getSession(pool, req.header.session).id;
+  console.log(req.headers);
+  const userId = await sessions.getSession(pool, req.headers.session);
   const response_data = await messages.sendMessage(
     pool,
-    userId,
+    userId.data[0].user_id,
     req.body.message,
     req.body.groups
   );
