@@ -88,7 +88,6 @@ app.get(
 );
 
 app.post("/login", async (req, res) => {
-  console.log(req.body);
   const response_data = await sessions.login(
     pool,
     req.body.username,
@@ -98,8 +97,14 @@ app.post("/login", async (req, res) => {
   res.send(response_data);
 });
 
-app.post("/api/sendmessage", async (req, res) => {
-  const response_data = await messages.sendMessage(pool, req.body.message);
+app.post("/api/messages/send", async (req, res) => {
+  const userId = await sessions.getSession(pool, req.header.session).id;
+  const response_data = await messages.sendMessage(
+    pool,
+    userId,
+    req.body.message,
+    req.body.groups
+  );
   res.send(response_data);
 });
 
