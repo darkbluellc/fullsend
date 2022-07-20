@@ -1,7 +1,7 @@
 const getGroups = async () => {
   const isLoggedIn = (await checkLogin()).data[0].user_id;
   if (isLoggedIn) {
-    const groups = (await (await fetch("/api/groups")).json()).data;
+    return (await (await fetch("/api/groups")).json()).data;
   }
 };
 
@@ -13,4 +13,15 @@ const getContactNumbersInGroup = async (group) => {
     numbers.push(contact.phone_number);
   }
   console.log(numbers);
+};
+
+window.onload = async () => {
+  const groups = await getGroups();
+  for (const group of groups) {
+    document.getElementById(
+      "fullsendRecipients"
+    ).innerHTML += `<input class="form-check-input" type="checkbox" role="switch" id="recipientSwitch-${group.id}">
+    <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
+    `;
+  }
 };

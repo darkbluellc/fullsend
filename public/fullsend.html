@@ -28,12 +28,12 @@
                     <!-- <li class="nav-item">
                         <a class="nav-link disabled" href="#">Admin</a>
                     </li> -->
-                    </ul>
-                    <ul class="navbar-nav d-flex">
-                <li class="nav-item">
-                    <a class="nav-link" href="" id="logout" onclick="logout()">Log out</a>
-                </li>
-            </ul>
+                </ul>
+                <ul class="navbar-nav d-flex">
+                    <li class="nav-item">
+                        <a class="nav-link" href="" id="logout" onclick="logout()">Log out</a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -41,6 +41,30 @@
         <div class="row text-center">
             <div class="col">
                 <h1>Fullsend</h1>
+                <h4>Send a message</h4>
+                <br>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <form>
+                    <div class="mb-3">
+                        <label for="fullsendRecipients" class="form-label">Recipients</label><br>
+                        <div class="form-check form-switch" id="fullsendRecipients">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fullsendMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="fullsendMessage" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="sendMessage(); return false;">Send message!</button>
+                    <div id="noRecipientsError" class="invalid-feedback">
+                        You must select at least one recipient group.
+                    </div>
+                    <div id="noMessageError" class="invalid-feedback">
+                        You must enter a message.
+                    </div>
+                </form>
             </div>
         </div>
     </div>
