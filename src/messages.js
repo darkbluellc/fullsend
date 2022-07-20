@@ -6,6 +6,7 @@ const groupsApi = require("./groups.js");
 require("dotenv").config();
 
 const TWILIO_FROM = process.env.TWILIO_FROM;
+const SENDING_ENABLED = process.env.SENDING_ENABLED == "true" ? true : false;
 
 const client = new twilio(
   process.env.TWILIO_ACCOUNT_SID,
@@ -34,13 +35,20 @@ exports.sendMessage = (pool, userId, text, groups) => {
         );
       }
       for (const number of numbers) {
-        client.messages
-          .create({
-            body: text,
-            to: number,
-            from: TWILIO_FROM,
-          })
-          .then((message) => console.info(message));
+        if (SENDING_ENABLED) {
+          client.messages
+            .create({
+              body: text,
+              to: number,
+              from: TWILIO_FROM,
+            })
+            .then((message) => console.info(message));
+        } else {
+          console.log(
+            `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${text}\n`
+          );
+          return { code: 200, message: "Sending disabled..." };
+        }
       }
     }
   });

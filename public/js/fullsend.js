@@ -25,8 +25,21 @@ const getRecipientGroups = () => {
 };
 
 const sendMessage = async () => {
+  let error = false;
+  document.getElementById("noMessageError").style.display = "none";
+  document.getElementById("noRecipientsError").style.display = "none";
   const message = document.getElementById("fullsendMessage").value;
+  if (/^\s*$/.test(message)) {
+    document.getElementById("noMessageError").style.display = "block";
+    error = true;
+  }
   const recipientGroups = getRecipientGroups();
+  if (recipientGroups.length == 0) {
+    document.getElementById("noRecipientsError").style.display = "block";
+    error = true;
+  }
+  if (error) return -1;
+
   const session = getCookie("fullsend_session");
   const result = await fetch("/api/messages/send", {
     method: "POST",
@@ -36,6 +49,12 @@ const sendMessage = async () => {
       groups: recipientGroups,
     }),
   });
+  document.getElementById(
+    "alert-placeholder"
+  ).innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+  Your message has been sent!
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>`;
 };
 
 window.onload = async () => {
