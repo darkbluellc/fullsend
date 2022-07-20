@@ -100,6 +100,13 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.get("/logout", async (req, res) => {
+  const response_data = await sessions.logout(pool, req.headers.session);
+  if (response_data.success) {
+    res.send(response_data);
+  }
+});
+
 app.post("/api/messages/send", async (req, res) => {
   const userId = await sessions.getSession(pool, req.headers.session);
   const response_data = await messages.sendMessage(
