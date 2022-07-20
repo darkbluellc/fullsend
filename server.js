@@ -118,7 +118,7 @@ app.get(
   }
 );
 
-app.post("/api/login", isLoggedIn, async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const response_data = await sessions.login(
     pool,
     req.body.username,
@@ -134,7 +134,7 @@ app.post("/api/login", isLoggedIn, async (req, res) => {
   }
 });
 
-app.get("/api/logout", isLoggedIn, async (req, res) => {
+app.get("/api/logout", async (req, res) => {
   const response_data = await sessions.logout(pool, req.headers.session);
   if (response_data.success) {
     res.send(response_data);
