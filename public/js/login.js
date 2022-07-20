@@ -28,3 +28,16 @@ const login = async () => {
 const handle403 = () => {
   document.getElementById("loginError").style.display = "block";
 };
+
+window.onload = () => {
+  const session = getCookie("fullsend_session");
+
+  if (session) {
+    (async () => {
+      const sessionInfo = await checkLogin(session);
+      window.location.href = "/fullsend";
+    })();
+  } else {
+    setAsLoggedOut();
+  }
+};

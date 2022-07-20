@@ -19,6 +19,11 @@ const checkLogin = async () => {
   return (await fetch("/api/session/" + session)).json();
 };
 
+const logout = () => {
+  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+  window.location.href = "/";
+};
+
 window.onload = () => {
   const session = getCookie("fullsend_session");
   if (session) {
@@ -31,9 +36,4 @@ window.onload = () => {
   } else if (window.href.location != "") {
     window.location.href = "/";
   }
-};
-
-const logout = () => {
-  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  window.location.href = "/";
 };
