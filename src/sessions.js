@@ -49,8 +49,8 @@ exports.logout = async (pool, sessionId) => {
   });
 };
 
-exports.getSession = (pool, session) => {
-  return execQuery(pool, SESSION_GET, session, (results) => {
+exports.getSession = (pool, sessionId) => {
+  return execQuery(pool, SESSION_GET, sessionId, (results) => {
     return results;
   });
 };

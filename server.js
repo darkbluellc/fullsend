@@ -27,6 +27,20 @@ const pool = mariadb.createPool({
 // Initialize express app
 const PORT = process.env.PORT || 8080;
 
+const isLoggedIn = async (req, res, next) => {
+  if (req.headers.session) {
+    const session = await sessions.getSession(pool, req.headers.session);
+    console.log(session);
+    if (session.data[0]) {
+      next();
+    } else {
+      res.send(401, "Unauthorized");
+    }
+  } else {
+    res.send(401, "Unauthorized");
+  }
+};
+
 // app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -52,53 +66,59 @@ app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
 
-app.get("/api/carriers", async (req, res) => {
+app.get("/api/carriers", isLoggedIn, async (req, res) => {
   const response_data = await carriers.getCarriers(pool);
   res.send(response_data);
 });
 
-app.get("/api/contacts", async (req, res) => {
+app.get("/api/contacts", isLoggedIn, async (req, res) => {
   const response_data = await contacts.getContacts(pool);
   res.send(response_data);
 });
 
-app.get("/api/groups", async (req, res) => {
+app.get("/api/groups", isLoggedIn, async (req, res) => {
   const response_data = await groups.getGroups(pool);
   res.send(response_data);
 });
 
 app.get(
   "/api/group/:group/contacts",
+  isLoggedIn,
   async ({ params: { group: group } }, res) => {
     const response_data = await groups.getContactsInGroup(pool, group);
     res.send(response_data);
   }
 );
 
-app.get("/api/titles", async (req, res) => {
+app.get("/api/titles", isLoggedIn, async (req, res) => {
   const response_data = await titles.getTitles(pool);
   res.send(response_data);
 });
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/users", isLoggedIn, async (req, res) => {
   const response_data = await users.getUsers(pool);
   res.send(response_data);
 });
 
-app.get("/api/user/:user", async ({ params: { user: user } }, res) => {
-  const response_data = await users.getUser(pool, user);
-  res.send(response_data);
-});
+app.get(
+  "/api/user/:user",
+  isLoggedIn,
+  async ({ params: { user: user } }, res) => {
+    const response_data = await users.getUser(pool, user);
+    res.send(response_data);
+  }
+);
 
 app.get(
   "/api/session/:session",
+  isLoggedIn,
   async ({ params: { session: session } }, res) => {
     const response_data = await sessions.getSession(pool, session);
     res.send(response_data);
   }
 );
 
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", isLoggedIn, async (req, res) => {
   const response_data = await sessions.login(
     pool,
     req.body.username,
@@ -114,14 +134,14 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/api/logout", async (req, res) => {
+app.get("/api/logout", isLoggedIn, async (req, res) => {
   const response_data = await sessions.logout(pool, req.headers.session);
   if (response_data.success) {
     res.send(response_data);
   }
 });
 
-app.post("/api/messages/send", async (req, res) => {
+app.post("/api/messages/send", isLoggedIn, async (req, res) => {
   const userId = await sessions.getSession(pool, req.headers.session);
   const response_data = await messages.sendMessage(
     pool,
