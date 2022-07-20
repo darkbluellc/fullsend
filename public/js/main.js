@@ -16,7 +16,9 @@ const getCookie = (cname) => {
 
 const checkLogin = async () => {
   const session = getCookie("fullsend_session");
-  return (await fetch("/api/session/" + session)).json();
+  return (
+    await fetch("/api/session/" + session, { headers: { session: session } })
+  ).json();
 };
 
 const logout = () => {

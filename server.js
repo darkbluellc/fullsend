@@ -28,15 +28,21 @@ const pool = mariadb.createPool({
 const PORT = process.env.PORT || 8080;
 
 const isLoggedIn = async (req, res, next) => {
+  console.log("Checking session...");
   if (req.headers.session) {
+    console.log(
+      "A session token was passed back, now checking if it is valid..."
+    );
     const session = await sessions.getSession(pool, req.headers.session);
-    console.log(session);
     if (session.data[0]) {
+      console.log("Valid session token found");
       next();
     } else {
+      console.log("The token passed back is invalid");
       res.send(401, "Unauthorized");
     }
   } else {
+    console.log("No session token passed back");
     res.send(401, "Unauthorized");
   }
 };

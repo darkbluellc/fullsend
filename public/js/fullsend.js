@@ -1,14 +1,25 @@
 const getGroups = async () => {
+  const session = getCookie("fullsend_session");
   const isLoggedIn = (await checkLogin()).data[0].user_id;
   if (isLoggedIn) {
-    return (await (await fetch("/api/groups")).json()).data;
+    return (
+      await (
+        await fetch("/api/groups", { headers: { session: session } })
+      ).json()
+    ).data;
   }
 };
 
 const getContactNumbersInGroup = async (group) => {
+  const session = getCookie("fullsend_session");
   let numbers = [];
-  const contacts = (await (await fetch(`/api/group/${group}/contacts`)).json())
-    .data;
+  const contacts = (
+    await (
+      await fetch(`/api/group/${group}/contacts`, {
+        headers: { session: session },
+      })
+    ).json()
+  ).data;
   for (contact of contacts) {
     numbers.push(contact.phone_number);
   }

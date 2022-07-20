@@ -34,6 +34,7 @@ exports.sendMessage = (pool, userId, text, groups) => {
           async (results) => {}
         );
       }
+      const uniqueNumbers = [...new Set(numbers)];
       for (const number of uniqueNumbers) {
         if (SENDING_ENABLED) {
           client.messages
