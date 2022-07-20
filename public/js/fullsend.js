@@ -15,12 +15,35 @@ const getContactNumbersInGroup = async (group) => {
   console.log(numbers);
 };
 
+const getRecipientGroups = () => {
+  let recipientGroups = [];
+  const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
+  for (const checkbox of checkboxes) {
+    recipientGroups.push(checkbox.value);
+  }
+  return recipientGroups;
+};
+
+const sendMessage = async () => {
+  const message = document.getElementById("fullsendMessage").value;
+  const recipientGroups = getRecipientGroups();
+  const session = getCookie("fullsend_session");
+  const result = await fetch("/api/messages/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", session: session },
+    body: JSON.stringify({
+      message: message,
+      groups: recipientGroups,
+    }),
+  });
+};
+
 window.onload = async () => {
   const groups = await getGroups();
   for (const group of groups) {
     document.getElementById(
       "fullsendRecipients"
-    ).innerHTML += `<input class="form-check-input" type="checkbox" role="switch" id="recipientSwitch-${group.id}">
+    ).innerHTML += `<input class="form-check-input" type="checkbox" role="switch" value=${group.id} id="recipientSwitch-${group.id}">
     <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
     `;
   }
