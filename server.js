@@ -104,9 +104,9 @@ app.post("/api/login", async (req, res) => {
     const sessionId = await response_data.data;
     sessionId
       ? res.send({ session: sessionId })
-      : res.status(403).send({ error: "Invalid session" });
+      : res.status(403).send({ code: 403, error: "Invalid session" });
   } else {
-    res.status(403).send({ error: "Unable to fetch session" });
+    res.status(403).send({ code: 403, error: "Unable to fetch session" });
   }
 });
 
