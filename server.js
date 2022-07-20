@@ -101,7 +101,6 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/api/messages/send", async (req, res) => {
-  console.log(req.headers);
   const userId = await sessions.getSession(pool, req.headers.session);
   const response_data = await messages.sendMessage(
     pool,

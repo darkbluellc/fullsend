@@ -15,12 +15,10 @@ exports.getUsers = (pool, sessionId) => {
 
 exports.login = async (pool, username, password) => {
   return execQuery(pool, AUTHENTICATE, username, async (results) => {
-    // return results;
     const id = results[0].id;
     const saved_hash = results[0].password;
     const matches = bcrypt.compareSync(password, saved_hash);
     if (matches) {
-      console.log("matches");
       const session_id = crypto.randomBytes(20).toString("hex");
       const session_results = await execQuery(pool, SESSION_CREATE, [
         session_id,
