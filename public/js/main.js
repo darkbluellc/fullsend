@@ -20,6 +20,8 @@ const checkLogin = async () => {
 };
 
 const logout = () => {
+  const session = getCookie("fullsend_session");
+  fetch("/api/logout", { headers: { session: session } });
   document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
   window.location.href = "/";
 };

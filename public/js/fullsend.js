@@ -43,8 +43,10 @@ window.onload = async () => {
 
   if (session) {
     (async () => {
-      const sessionInfo = await checkLogin(session);
-      if (!(await sessionInfo)) window.location.href = "/";
+      const sessionInfo = (await checkLogin(session)).data;
+      if ((await sessionInfo).length == 0) {
+        logout();
+      }
     })();
   } else {
     window.location.href = "/";

@@ -31,11 +31,17 @@ const handle403 = () => {
 
 window.onload = () => {
   const session = getCookie("fullsend_session");
-
   if (session) {
     (async () => {
-      const sessionInfo = await checkLogin(session);
-      if (await sessionInfo) window.location.href = "/fullsend";
+      const sessionInfo = (await checkLogin(session)).data;
+      console.log(sessionInfo);
+      if ((await sessionInfo).length != 0) {
+        window.location.href = "/fullsend";
+      } else {
+        console.log("expiring...");
+        document.cookie =
+          "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      }
     })();
   }
 };
