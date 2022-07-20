@@ -34,7 +34,7 @@ exports.sendMessage = (pool, userId, text, groups) => {
           async (results) => {}
         );
       }
-      for (const number of numbers) {
+      for (const number of uniqueNumbers) {
         if (SENDING_ENABLED) {
           client.messages
             .create({
@@ -47,7 +47,6 @@ exports.sendMessage = (pool, userId, text, groups) => {
           console.log(
             `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${text}\n`
           );
-          return { code: 200, message: "Sending disabled..." };
         }
       }
     }

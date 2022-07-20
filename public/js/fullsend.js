@@ -12,7 +12,6 @@ const getContactNumbersInGroup = async (group) => {
   for (contact of contacts) {
     numbers.push(contact.phone_number);
   }
-  console.log(numbers);
 };
 
 const getRecipientGroups = () => {

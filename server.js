@@ -129,7 +129,7 @@ app.post("/api/messages/send", async (req, res) => {
     req.body.message,
     req.body.groups
   );
-  res.send(await response_data);
+  res.send(response_data);
 });
 
 server.listen(PORT, () => {
