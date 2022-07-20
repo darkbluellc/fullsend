@@ -17,7 +17,7 @@ const MESSAGE_ADD =
   "INSERT INTO messages (`id`, `user_id`, `text`, `sent_at`) VALUES (null, ?, ?, NOW())";
 const MESSAGE_GROUP_ADD = "INSERT INTO messages_groups VALUES (?, ?)";
 
-exports.sendMessage = (pool, userId, text, groups) => {
+exports.sendMessage = async (pool, userId, text, groups) => {
   let numbers = [];
   execQuery(pool, MESSAGE_ADD, [userId, text], async (results) => {
     if (results) {
