@@ -44,5 +44,4 @@ exports.sendMessage = (pool, userId, text, groups) => {
       }
     }
   });
-  // Send twilio message
 };
