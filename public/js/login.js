@@ -22,7 +22,7 @@ const login = async () => {
 
   document.cookie = `fullsend_session=${await session.session}; expires=${expires}`;
 
-  window.location.href = "/";
+  window.location.href = "/fullsend";
 };
 
 const handle403 = () => {

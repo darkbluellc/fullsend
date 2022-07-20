@@ -1,24 +1,16 @@
-const getCookie = (cname) => {
-  let name = cname + "=";
-  let decodedCookie = decodeURIComponent(document.cookie);
-  let ca = decodedCookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) == " ") {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
+const getGroups = async () => {
+  const isLoggedIn = (await checkLogin()).data[0].user_id;
+  if (isLoggedIn) {
+    const groups = (await (await fetch("/api/groups")).json()).data;
   }
-  return undefined;
 };
 
-const checkLogin = async (session) => {
-  return await (await fetch("/api/session/" + session)).json();
-};
-
-const logout = () => {
-  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  window.location.href = "/";
+const getContactNumbersInGroup = async (group) => {
+  let numbers = [];
+  const contacts = (await (await fetch(`/api/group/${group}/contacts`)).json())
+    .data;
+  for (contact of contacts) {
+    numbers.push(contact.phone_number);
+  }
+  console.log(numbers);
 };

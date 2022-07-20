@@ -44,6 +44,10 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login.html"));
 });
 
+app.get("/fullsend", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/fullsend.html"));
+});
+
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });

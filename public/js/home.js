@@ -13,8 +13,8 @@ window.onload = () => {
 
   if (session) {
     (async () => {
-      // const sessionInfo = await checkLogin(session);
-      setAsLoggedIn();
+      const sessionInfo = await checkLogin(session);
+      window.location.href = "/fullsend";
     })();
   } else {
     setAsLoggedOut();
