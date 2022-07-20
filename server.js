@@ -36,6 +36,14 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
+app.get("/help", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/help.html"));
+});
+
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/login.html"));
+});
+
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
@@ -86,7 +94,7 @@ app.get(
   }
 );
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const response_data = await sessions.login(
     pool,
     req.body.username,
@@ -94,13 +102,15 @@ app.post("/login", async (req, res) => {
   );
   if (response_data.success) {
     const sessionId = await response_data.data;
-    res.send(sessionId);
+    sessionId
+      ? res.send({ session: sessionId })
+      : res.status(403).send({ error: "Invalid session" });
   } else {
-    res.send({ success: false });
+    res.status(403).send({ error: "Unable to fetch session" });
   }
 });
 
-app.get("/logout", async (req, res) => {
+app.get("/api/logout", async (req, res) => {
   const response_data = await sessions.logout(pool, req.headers.session);
   if (response_data.success) {
     res.send(response_data);
