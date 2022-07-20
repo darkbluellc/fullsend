@@ -39,6 +39,17 @@ const sendMessage = async () => {
 };
 
 window.onload = async () => {
+  const session = getCookie("fullsend_session");
+
+  if (session) {
+    (async () => {
+      const sessionInfo = await checkLogin(session);
+      if (!(await sessionInfo)) window.location.href = "/";
+    })();
+  } else {
+    window.location.href = "/";
+  }
+
   const groups = await getGroups();
   for (const group of groups) {
     document.getElementById(

@@ -35,9 +35,7 @@ window.onload = () => {
   if (session) {
     (async () => {
       const sessionInfo = await checkLogin(session);
-      window.location.href = "/fullsend";
+      if (await sessionInfo) window.location.href = "/fullsend";
     })();
-  } else {
-    setAsLoggedOut();
   }
 };
