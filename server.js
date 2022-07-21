@@ -37,6 +37,7 @@ const isLoggedIn = async (req, res, next) => {
     if (session.data[0]) {
       req.body.sessionInfo = session.data[0];
       console.log("Valid session token found");
+      sessions.sessionUpdate(pool, req.headers.session);
       next();
     } else {
       console.log("The token passed back is invalid");
