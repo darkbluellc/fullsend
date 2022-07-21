@@ -34,7 +34,6 @@ const isLoggedIn = async (req, res, next) => {
       "A session token was passed back, now checking if it is valid..."
     );
     const session = await sessions.getSession(pool, req.headers.session);
-    console.log(req.body);
     if (session.data[0]) {
       console.log("Valid session token found");
       next();
@@ -75,6 +74,10 @@ app.get("/fullsend", (req, res) => {
   res.sendFile(path.join(__dirname, "public/fullsend.html"));
 });
 
+app.get("/changepassword", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/changepassword.html"));
+});
+
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
@@ -112,13 +115,10 @@ authRouter.get("/api/users", async (req, res) => {
   res.send(response_data);
 });
 
-authRouter.get(
-  "/api/user/:user",
-  async ({ params: { user: user } }, res) => {
-    const response_data = await users.getUser(pool, user);
-    res.send(response_data);
-  }
-);
+authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
+  const response_data = await users.getUser(pool, user);
+  res.send(response_data);
+});
 
 authRouter.get(
   "/api/session/:session",

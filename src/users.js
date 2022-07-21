@@ -1,6 +1,7 @@
 const { execQuery } = require("./db");
 
-const USERS_GET = "SELECT first_name, last_name, username, admin FROM users";
+const USERS_GET =
+  "SELECT id, first_name, last_name, username, title, admin FROM users";
 const USER_GET =
   "SELECT first_name, last_name, username, admin FROM users WHERE id = ?";
 
