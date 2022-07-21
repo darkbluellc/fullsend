@@ -28,22 +28,19 @@ const pool = mariadb.createPool({
 const PORT = process.env.PORT || 8080;
 
 const isLoggedIn = async (req, res, next) => {
-  console.log("Checking session...");
+  //"Checking session...
   if (req.headers.session) {
-    console.log(
-      "A session token was passed back, now checking if it is valid..."
-    );
+      //A session token was passed back, now checking if it is valid...
     const session = await sessions.getSession(pool, req.headers.session);
-    console.log(req.body);
     if (session.data[0]) {
-      console.log("Valid session token found");
+      // Valid session token found
       next();
     } else {
-      console.log("The token passed back is invalid");
+      // The token passed back is invalid
       res.send(401, "Unauthorized");
     }
   } else {
-    console.log("No session token passed back");
+    // No session token passed back
     res.send(401, "Unauthorized");
   }
 };
@@ -129,19 +126,14 @@ authRouter.get(
 );
 
 app.post("/api/login", async (req, res) => {
-  const response_data = await sessions.login(
+  const sessionId = await sessions.login(
     pool,
     req.body.username,
     req.body.password
   );
-  if (response_data.success) {
-    const sessionId = await response_data.data;
-    sessionId
-      ? res.send({ session: sessionId })
-      : res.status(403).send({ code: 403, error: "Invalid session" });
-  } else {
-    res.status(403).send({ code: 403, error: "Unable to fetch session" });
-  }
+  sessionId
+    ? res.send({ session: sessionId })
+    : res.status(403).send({ code: 403, error: "Invalid session" });
 });
 
 app.get("/api/logout", async (req, res) => {

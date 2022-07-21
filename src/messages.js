@@ -18,38 +18,41 @@ const MESSAGE_ADD =
 const MESSAGE_GROUP_ADD = "INSERT INTO messages_groups VALUES (?, ?)";
 
 exports.sendMessage = async (pool, userId, text, groups) => {
-  let numbers = [];
-  execQuery(pool, MESSAGE_ADD, [userId, text], async (results) => {
-    if (results) {
-      for (const group of groups) {
-        const groupResponse = await groupsApi.getNumbersinGroup(pool, group);
-        for (const groupNumber of groupResponse.data) {
-          const number = groupNumber.phone_number;
-          numbers.push(number);
-        }
-        execQuery(
-          pool,
-          MESSAGE_GROUP_ADD,
-          [Number(results.insertId), group],
-          async (results) => {}
-        );
-      }
-      const uniqueNumbers = [...new Set(numbers)];
-      for (const number of uniqueNumbers) {
-        if (SENDING_ENABLED) {
-          const message = await client.messages.create(
-            {
-              body: text,
-              to: number,
-              from: TWILIO_FROM,
-            }
-          );
-        } else {
-          console.log(
-            `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${text}\n`
-          );
-        }
-      }
+  const numbers = new Set();
+  const messageAdded = await execQuery(pool, MESSAGE_ADD, [userId, text]);
+  if (!messageAdded?.data?.insertId) {
+    return;
+  }
+  for (const group of groups) {
+    const groupResponse = await groupsApi.getNumbersinGroup(pool, group);
+    for (const groupNumber of groupResponse.data) {
+      const number = groupNumber.phone_number;
+      numbers.add(number);
     }
-  });
+    await execQuery(
+      pool,
+      MESSAGE_GROUP_ADD,
+      [Number(messageAdded.data.insertId), group],
+    );
+  }
+
+  for (const number of numbers) {
+    if (SENDING_ENABLED) {
+      try {
+        await client.messages.create(
+          {
+            body: text,
+            to: number,
+            from: TWILIO_FROM,
+          }
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      console.log(
+        `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${text}\n`
+      );
+    }
+  }
 };
