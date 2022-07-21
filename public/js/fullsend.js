@@ -4,7 +4,7 @@ const getGroups = async () => {
   if (isLoggedIn) {
     return (
       await (
-        await fetch("/api/groups", { headers: { session: session } })
+        await fetch("/auth/api/groups", { headers: { session: session } })
       ).json()
     ).data;
   }
@@ -15,7 +15,7 @@ const getContactNumbersInGroup = async (group) => {
   let numbers = [];
   const contacts = (
     await (
-      await fetch(`/api/group/${group}/contacts`, {
+      await fetch(`/auth/api/group/${group}/contacts`, {
         headers: { session: session },
       })
     ).json()
@@ -51,7 +51,8 @@ const sendMessage = async () => {
   if (error) return -1;
 
   const session = getCookie("fullsend_session");
-  const result = await fetch("/api/messages/send", {
+  console.log(message);
+  const result = await fetch("/auth/api/messages/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", session: session },
     body: JSON.stringify({

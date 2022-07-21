@@ -34,6 +34,7 @@ const isLoggedIn = async (req, res, next) => {
       "A session token was passed back, now checking if it is valid..."
     );
     const session = await sessions.getSession(pool, req.headers.session);
+    console.log(req.body);
     if (session.data[0]) {
       console.log("Valid session token found");
       next();
@@ -47,8 +48,14 @@ const isLoggedIn = async (req, res, next) => {
   }
 };
 
+// auth router, anything on this router requires signin
+const authRouter = express.Router();
+authRouter.use(isLoggedIn);
+
 // app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+// Note this makes authed apis becoeme /auth/api....
+app.use("/auth", authRouter);
 
 app.use("/public", express.static(path.join(__dirname, "public")));
 
@@ -72,52 +79,49 @@ app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
 
-app.get("/api/carriers", isLoggedIn, async (req, res) => {
+authRouter.get("/api/carriers", async (req, res) => {
   const response_data = await carriers.getCarriers(pool);
   res.send(response_data);
 });
 
-app.get("/api/contacts", isLoggedIn, async (req, res) => {
+authRouter.get("/api/contacts", async (req, res) => {
   const response_data = await contacts.getContacts(pool);
   res.send(response_data);
 });
 
-app.get("/api/groups", isLoggedIn, async (req, res) => {
+authRouter.get("/api/groups", async (req, res) => {
   const response_data = await groups.getGroups(pool);
   res.send(response_data);
 });
 
-app.get(
+authRouter.get(
   "/api/group/:group/contacts",
-  isLoggedIn,
   async ({ params: { group: group } }, res) => {
     const response_data = await groups.getContactsInGroup(pool, group);
     res.send(response_data);
   }
 );
 
-app.get("/api/titles", isLoggedIn, async (req, res) => {
+authRouter.get("/api/titles", async (req, res) => {
   const response_data = await titles.getTitles(pool);
   res.send(response_data);
 });
 
-app.get("/api/users", isLoggedIn, async (req, res) => {
+authRouter.get("/api/users", async (req, res) => {
   const response_data = await users.getUsers(pool);
   res.send(response_data);
 });
 
-app.get(
+authRouter.get(
   "/api/user/:user",
-  isLoggedIn,
   async ({ params: { user: user } }, res) => {
     const response_data = await users.getUser(pool, user);
     res.send(response_data);
   }
 );
 
-app.get(
+authRouter.get(
   "/api/session/:session",
-  isLoggedIn,
   async ({ params: { session: session } }, res) => {
     const response_data = await sessions.getSession(pool, session);
     res.send(response_data);
@@ -147,7 +151,7 @@ app.get("/api/logout", async (req, res) => {
   }
 });
 
-app.post("/api/messages/send", isLoggedIn, async (req, res) => {
+authRouter.post("/api/messages/send", async (req, res) => {
   const userId = await sessions.getSession(pool, req.headers.session);
   const response_data = await messages.sendMessage(
     pool,
