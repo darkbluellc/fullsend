@@ -140,7 +140,7 @@ authRouter.get(
 app.get("/api/logout", async (req, res) => {
   const response_data = await sessions.logout(pool, req.headers.session);
   if (response_data.success) {
-    response_data.data.insertId = Number(response_data.data.insertId);
+    response_data.data.insertId = response_data.data.insertId;
     res.send(response_data);
   }
 });

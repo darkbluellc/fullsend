@@ -28,7 +28,8 @@ const execQuery = async (
 // Converts bigInts in an object to ints checking for overflow
 const convertBigInts = (obj) => {
   for (const key in obj) {
-    if (obj[key] instanceof BigInt) {
+    console.log(`${key}: ${obj[key]}, typeof: ${typeof obj[key]}`);
+    if (typeof obj[key] === 'bigint') {
       if (obj[key] > Number.MAX_SAFE_INTEGER) {
         console.error(`${key} is too large to convert to int`);
         obj[key] = Number.MAX_SAFE_INTEGER;

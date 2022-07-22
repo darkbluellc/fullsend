@@ -32,7 +32,7 @@ exports.sendMessage = async (pool, userId, text, groups) => {
     await execQuery(
       pool,
       MESSAGE_GROUP_ADD,
-      [Number(messageAdded.data.insertId), group],
+      [messageAdded.data.insertId, group],
     );
   }
 
