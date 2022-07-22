@@ -7,13 +7,11 @@ const USER_GET =
   "SELECT first_name, last_name, username, admin FROM users WHERE id = ?";
 const PASSWORD_UPDATE = "UPDATE users SET password = ? WHERE id = ?";
 
-exports.getUsers = (pool) => execQuery(pool, USERS_GET, null);
+exports.getUsers = async (pool) => execQuery(pool, USERS_GET, null);
 
-exports.getUser = (pool, user) => execQuery(pool, USER_GET, user);
+exports.getUser = async (pool, user) => execQuery(pool, USER_GET, user);
 
-exports.changePassword = (pool, user, plaintextPassword) => {
+exports.changePassword = async (pool, user, plaintextPassword) => {
   const hashedPassword = bcrypt.hashSync(plaintextPassword, 10);
-  execQuery(pool, PASSWORD_UPDATE, [hashedPassword, user], (results) => {
-    return results;
-  });
+  return execQuery(pool, PASSWORD_UPDATE, [hashedPassword, user]);
 };

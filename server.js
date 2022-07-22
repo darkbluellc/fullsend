@@ -34,26 +34,25 @@ const isLoggedIn = async (req, res, next) => {
     const session = await sessions.getSession(pool, req.headers.session);
     if (session.data[0]) {
       req.body.sessionInfo = session.data[0];
-      console.log("Valid session token found");
+      // Valid session token found
       sessions.sessionUpdate(pool, req.headers.session);
       next();
     } else {
-      console.log("The token passed back is invalid");
-      res.status(401).send("Unauthorized");
+      //The token passed back is invalid
+      res.status(401).send({code: 401, error:"Unauthorized"});
     }
   } else {
-    console.log("No session token passed back");
-    res.status(401).send("Unauthorized");
+    // "No session token passed back
+    res.status(401).send({code: 401, error: "Unauthorized"});
   }
 };
 
 const isAdmin = async (req, res, next) => {
-  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id))
-    .data[0];
+  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id)).data[0];
   if (userInfo.admin == 1) {
     next();
   } else {
-    res.status(403).send("Forbidden");
+    res.status(403).send({code: 403, error: "Forbidden"});
   }
 };
 
