@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 8080;
 const isLoggedIn = async (req, res, next) => {
   //"Checking session...
   if (req.headers.session) {
-      //A session token was passed back, now checking if it is valid...
+    //A session token was passed back, now checking if it is valid...
     const session = await sessions.getSession(pool, req.headers.session);
     if (session.data[0]) {
       req.body.sessionInfo = session.data[0];
@@ -39,20 +39,21 @@ const isLoggedIn = async (req, res, next) => {
       next();
     } else {
       //The token passed back is invalid
-      res.status(401).send({code: 401, error:"Unauthorized"});
+      res.status(401).send({ code: 401, error: "Unauthorized" });
     }
   } else {
     // "No session token passed back
-    res.status(401).send({code: 401, error: "Unauthorized"});
+    res.status(401).send({ code: 401, error: "Unauthorized" });
   }
 };
 
 const isAdmin = async (req, res, next) => {
-  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id)).data[0];
+  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id))
+    .data[0];
   if (userInfo.admin == 1) {
     next();
   } else {
-    res.status(403).send({code: 403, error: "Forbidden"});
+    res.status(403).send({ code: 403, error: "Forbidden" });
   }
 };
 

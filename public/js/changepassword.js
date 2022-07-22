@@ -50,6 +50,15 @@ const changePassword = async () => {
       password: password,
     }),
   });
+
+  document.getElementById(
+    "alert-placeholder"
+  ).innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+  Password changed successfully!
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>`;
+
+  document.getElementById("changePasswordForm").reset();
 };
 
 window.onload = async () => {

@@ -13,5 +13,5 @@ exports.getUser = async (pool, user) => execQuery(pool, USER_GET, user);
 
 exports.changePassword = async (pool, user, plaintextPassword) => {
   const hashedPassword = bcrypt.hashSync(plaintextPassword, 10);
-  return execQuery(pool, PASSWORD_UPDATE, [hashedPassword, user]);
+  return await execQuery(pool, PASSWORD_UPDATE, [hashedPassword, user]);
 };
