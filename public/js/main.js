@@ -17,7 +17,9 @@ const getCookie = (cname) => {
 const checkLogin = async () => {
   const session = getCookie("fullsend_session");
   return (
-    await fetch("/auth/api/session/" + session, { headers: { session: session } })
+    await fetch("/auth/api/session/" + session, {
+      headers: { session: session },
+    })
   ).json();
 };
 
@@ -26,6 +28,18 @@ const logout = () => {
   fetch("/api/logout", { headers: { session: session } });
   document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
   window.location.href = "/";
+};
+
+const isAdmin = async (userId) => {
+  const session = getCookie("fullsend_session");
+  const userInfo = (
+    await (
+      await fetch(`/auth/api/user/${userId}`, {
+        headers: { session: session },
+      })
+    ).json()
+  ).data[0];
+  return userInfo.admin;
 };
 
 window.onload = () => {

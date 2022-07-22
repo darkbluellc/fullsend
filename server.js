@@ -33,15 +33,27 @@ const isLoggedIn = async (req, res, next) => {
       //A session token was passed back, now checking if it is valid...
     const session = await sessions.getSession(pool, req.headers.session);
     if (session.data[0]) {
-      // Valid session token found
+      req.body.sessionInfo = session.data[0];
+      console.log("Valid session token found");
+      sessions.sessionUpdate(pool, req.headers.session);
       next();
     } else {
-      // The token passed back is invalid
-      res.send(401, "Unauthorized");
+      console.log("The token passed back is invalid");
+      res.status(401).send("Unauthorized");
     }
   } else {
-    // No session token passed back
-    res.send(401, "Unauthorized");
+    console.log("No session token passed back");
+    res.status(401).send("Unauthorized");
+  }
+};
+
+const isAdmin = async (req, res, next) => {
+  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id))
+    .data[0];
+  if (userInfo.admin == 1) {
+    next();
+  } else {
+    res.status(403).send("Forbidden");
   }
 };
 
@@ -70,6 +82,10 @@ app.get("/login", (req, res) => {
 
 app.get("/fullsend", (req, res) => {
   res.sendFile(path.join(__dirname, "public/fullsend.html"));
+});
+
+app.get("/changepassword", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/changepassword.html"));
 });
 
 app.get("/api", async (req, res) => {
@@ -109,13 +125,10 @@ authRouter.get("/api/users", async (req, res) => {
   res.send(response_data);
 });
 
-authRouter.get(
-  "/api/user/:user",
-  async ({ params: { user: user } }, res) => {
-    const response_data = await users.getUser(pool, user);
-    res.send(response_data);
-  }
-);
+authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
+  const response_data = await users.getUser(pool, user);
+  res.send(response_data);
+});
 
 authRouter.get(
   "/api/session/:session",
@@ -124,6 +137,13 @@ authRouter.get(
     res.send(response_data);
   }
 );
+
+app.get("/api/logout", async (req, res) => {
+  const response_data = await sessions.logout(pool, req.headers.session);
+  if (response_data.success) {
+    res.send(response_data);
+  }
+});
 
 app.post("/api/login", async (req, res) => {
   const sessionId = await sessions.login(
@@ -136,11 +156,13 @@ app.post("/api/login", async (req, res) => {
     : res.status(403).send({ code: 403, error: "Invalid session" });
 });
 
-app.get("/api/logout", async (req, res) => {
-  const response_data = await sessions.logout(pool, req.headers.session);
-  if (response_data.success) {
-    res.send(response_data);
-  }
+authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {
+  const response_data = await users.changePassword(
+    pool,
+    req.body.userId,
+    req.body.password
+  );
+  res.send(response_data);
 });
 
 authRouter.post("/api/messages/send", async (req, res) => {

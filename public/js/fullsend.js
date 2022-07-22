@@ -1,3 +1,5 @@
+//TODO: this doesn't actually need isLoggedIn here, I don't think...
+//Pretty sure the redirect if not logged in (line 73ish) will cover that
 const getGroups = async () => {
   const session = getCookie("fullsend_session");
   const isLoggedIn = (await checkLogin()).data[0].user_id;
@@ -20,7 +22,7 @@ const getContactNumbersInGroup = async (group) => {
       })
     ).json()
   ).data;
-  for (contact of contacts) {
+  for (const contact of contacts) {
     numbers.push(contact.phone_number);
   }
 };
