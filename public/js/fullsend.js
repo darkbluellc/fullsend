@@ -68,6 +68,8 @@ const sendMessage = async () => {
   Your message has been sent!
   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>`;
+
+  document.getElementById("fullsendForm").reset();
 };
 
 window.onload = async () => {

@@ -34,7 +34,6 @@ window.onload = () => {
   if (session) {
     (async () => {
       const sessionInfo = (await checkLogin(session)).data;
-      console.log(sessionInfo);
       if ((await sessionInfo).length != 0) {
         window.location.href = "/fullsend";
       } else {
