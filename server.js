@@ -152,7 +152,7 @@ app.post("/api/login", async (req, res) => {
   );
   sessionId
     ? res.send({ session: sessionId })
-    : res.status(403).send({ code: 403, error: "Invalid session" });
+    : res.status(401).send({ code: 401, error: "Invalid session" });
 });
 
 authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {
