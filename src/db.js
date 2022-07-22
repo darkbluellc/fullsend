@@ -2,7 +2,6 @@ const execQuery = async (
   pool,
   q,
   args = null,
-  responseFunc = null,
   db = null
 ) => {
   let conn;
@@ -11,9 +10,9 @@ const execQuery = async (
     await conn.query(`USE ${db || process.env.PRIMARY_DB_NAME};`);
     const results = await (args != null ? conn.query(q, args) : conn.query(q));
     const response = { success: true };
-    if (responseFunc != null) {
+    if (results) {
       delete results["meta"];
-      response.data = responseFunc(results);
+      response.data = results
     }
     return response;
   } catch (err) {
