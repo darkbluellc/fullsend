@@ -16,11 +16,15 @@ const getCookie = (cname) => {
 
 const checkLogin = async () => {
   const session = getCookie("fullsend_session");
-  return (
+  const login = (
     await fetch("/auth/api/session/" + session, {
       headers: { session: session },
     })
   ).json();
+  if ((await login).code == 401) {
+    logout();
+  }
+  return login;
 };
 
 const logout = () => {

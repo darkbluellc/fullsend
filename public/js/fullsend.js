@@ -53,7 +53,6 @@ const sendMessage = async () => {
   if (error) return -1;
 
   const session = getCookie("fullsend_session");
-  console.log(message);
   const result = await fetch("/auth/api/messages/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", session: session },
