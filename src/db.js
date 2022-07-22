@@ -12,7 +12,7 @@ const execQuery = async (
     const response = { success: true };
     if (results) {
       delete results["meta"];
-      response.data = results
+      response.data = convertBigInts(results);
     }
     return response;
   } catch (err) {
@@ -24,5 +24,20 @@ const execQuery = async (
     }
   }
 };
+
+// Converts bigInts in an object to ints checking for overflow
+const convertBigInts = (obj) => {
+  for (const key in obj) {
+    if (obj[key] instanceof BigInt) {
+      if (obj[key] > Number.MAX_SAFE_INTEGER) {
+        console.error(`${key} is too large to convert to int`);
+        obj[key] = Number.MAX_SAFE_INTEGER;
+      } else {
+        obj[key] = Number(obj[key]);
+      }
+    }
+  }
+  return obj;
+}
 
 module.exports = { execQuery };
