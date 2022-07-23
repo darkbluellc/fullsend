@@ -1,0 +1,17 @@
+name: "Check for version update in PR to main"
+
+on:
+  pull_request:
+    # Sequence of patterns matched against refs/heads
+    branches:    
+    - main
+
+jobs:
+  master-pr-check-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Check if version changed
+      uses: ddbruce/action-main-pr-version-check
+      with:
+        file: package.json # optional, defaults to "package.json"
