@@ -1,5 +1,5 @@
 const { execQuery } = require("./db");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
 const AUTHENTICATE = "SELECT id, password FROM users WHERE username = ?";
@@ -33,7 +33,7 @@ exports.login = async (pool, username, password) => {
 };
 
 exports.sessionUpdate = async (pool, sessionId) => {
-  return execQuery(pool, SESSION_UPDATE, sessionId)
+  return execQuery(pool, SESSION_UPDATE, sessionId);
 };
 
 exports.logout = async (pool, sessionId) => {

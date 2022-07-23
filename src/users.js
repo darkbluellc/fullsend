@@ -1,5 +1,5 @@
 const { execQuery } = require("./db");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const USERS_GET =
   "SELECT id, first_name, last_name, username, title, admin FROM users ORDER BY last_name";
