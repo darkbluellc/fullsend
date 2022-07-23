@@ -7,10 +7,10 @@ on:
     - main
 
 jobs:
-  master-pr-check-version:
+  main-pr-check-version:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
 
     - name: Check if version changed
-      uses: ddbruce/action-main-pr-version-check
+      uses: ddbruce/action-main-pr-version-check@maing
