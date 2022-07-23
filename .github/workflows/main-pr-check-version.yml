@@ -13,4 +13,4 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Check if version changed
-      uses: ddbruce/action-main-pr-version-check@maing
+      uses: ddbruce/action-main-pr-version-check@main
