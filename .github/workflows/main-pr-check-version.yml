@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+
     - name: Check if version changed
       uses: ddbruce/action-main-pr-version-check
-      with:
-        file: package.json # optional, defaults to "package.json"
