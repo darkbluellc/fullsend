@@ -64,29 +64,22 @@ const isAdmin = async (userId = null) => {
 };
 
 const checkForRedirect = async () => {
-  const publicPages = ["/", "/login", "/help"];
+  if (window.location.pathname == "/") return;
+
   const authPages = ["/fullsend"];
   const adminPages = ["/changepassword"];
 
-  for (const page of publicPages) {
-    if (window.location.pathname == page) return;
-  }
-
   const isLoggedInVar = (await isLoggedIn()) ? true : false;
-
-  for (const page of authPages) {
-    if (window.location.href == page) {
-      if (!isLoggedInVar && window.location.href != "/") {
-        window.location.href = "/";
-      }
+  for (const page of [authPages, adminPages]) {
+    if (window.location.pathname == page && !isLoggedInVar) {
+      window.location.href = "/";
     }
   }
+
   const isAdminVar = (await isAdmin()) ? true : false;
   for (const page of adminPages) {
-    if (window.location.href == page) {
-      if (isLoggedInVar && !isAdminVar) {
-        window.location.href = "/fullsend";
-      }
+    if (window.location.pathname == page && !isAdminVar) {
+      window.location.href = "/fullsend";
     }
   }
 };
