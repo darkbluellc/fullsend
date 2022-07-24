@@ -61,23 +61,6 @@ const changePassword = async () => {
   document.getElementById("changePasswordForm").reset();
 };
 
-window.onload = async () => {
-  const session = getCookie("fullsend_session");
-  let sessionInfo;
-
-  if (session) {
-    (async () => {
-      sessionInfo = (await checkLogin(session)).data;
-      const userIsAdmin = await isAdmin(sessionInfo[0].user_id);
-      if ((await sessionInfo).length == 0) {
-        logout();
-      } else if (!userIsAdmin) {
-        window.location.href = "/fullsend";
-      }
-    })();
-  } else {
-    window.location.href = "/";
-  }
-
+const pageOnLoadFunctions = async () => {
   loadUsers();
 };

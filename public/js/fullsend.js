@@ -71,20 +71,7 @@ const sendMessage = async () => {
   document.getElementById("fullsendForm").reset();
 };
 
-window.onload = async () => {
-  const session = getCookie("fullsend_session");
-
-  if (session) {
-    (async () => {
-      const sessionInfo = (await checkLogin(session)).data;
-      if ((await sessionInfo).length == 0) {
-        logout();
-      }
-    })();
-  } else {
-    window.location.href = "/";
-  }
-
+const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
   for (const group of groups) {
     document.getElementById(

@@ -27,6 +27,20 @@ const checkLogin = async () => {
   return login;
 };
 
+const isLoggedIn = async () => {
+  const session = getCookie("fullsend_session");
+  if (!session) return false;
+  const login = (
+    await fetch("/auth/api/session/" + session, {
+      headers: { session: session },
+    })
+  ).json();
+  if ((await login).code == 401) {
+    return false;
+  }
+  return true;
+};
+
 const logout = () => {
   const session = getCookie("fullsend_session");
   fetch("/api/logout", { headers: { session: session } });
@@ -34,8 +48,11 @@ const logout = () => {
   window.location.href = "/";
 };
 
-const isAdmin = async (userId) => {
+const isAdmin = async (userId = null) => {
   const session = getCookie("fullsend_session");
+  if (!userId) {
+    userId = (await checkLogin()).data[0].user_id;
+  }
   const userInfo = (
     await (
       await fetch(`/auth/api/user/${userId}`, {
@@ -46,16 +63,35 @@ const isAdmin = async (userId) => {
   return userInfo.admin;
 };
 
-window.onload = () => {
-  const session = getCookie("fullsend_session");
-  if (session) {
-    (async () => {
-      const sessionInfo = await checkLogin();
-      if (!sessionInfo && window.href.location != "") {
+const checkForRedirect = async () => {
+  const publicPages = ["/", "/login", "/help"];
+  const authPages = ["/fullsend"];
+  const adminPages = ["/changepassword"];
+
+  for (const page of publicPages) {
+    if (window.location.pathname == page) return;
+  }
+
+  const isLoggedInVar = (await isLoggedIn()) ? true : false;
+
+  for (const page of authPages) {
+    if (window.location.href == page) {
+      if (!isLoggedInVar && window.location.href != "/") {
         window.location.href = "/";
       }
-    })();
-  } else if (window.href.location != "") {
-    window.location.href = "/";
+    }
   }
+  const isAdminVar = (await isAdmin()) ? true : false;
+  for (const page of adminPages) {
+    if (window.location.href == page) {
+      if (isLoggedInVar && !isAdminVar) {
+        window.location.href = "/fullsend";
+      }
+    }
+  }
+};
+
+window.onload = () => {
+  checkForRedirect();
+  pageOnLoadFunctions();
 };

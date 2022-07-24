@@ -29,18 +29,20 @@ const handle403 = () => {
   document.getElementById("loginError").style.display = "block";
 };
 
-window.onload = () => {
-  const session = getCookie("fullsend_session");
-  if (session) {
-    (async () => {
-      const sessionInfo = (await checkLogin(session)).data;
-      if ((await sessionInfo).length != 0) {
-        window.location.href = "/fullsend";
-      } else {
-        console.log("expiring...");
-        document.cookie =
-          "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-      }
-    })();
-  }
-};
+// window.onload = () => {
+//   const session = getCookie("fullsend_session");
+//   if (session) {
+//     (async () => {
+//       const sessionInfo = (await checkLogin(session)).data;
+//       if ((await sessionInfo).length != 0) {
+//         window.location.href = "/fullsend";
+//       } else {
+//         console.log("expiring...");
+//         document.cookie =
+//           "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+//       }
+//     })();
+//   }
+// };
+
+const pageOnLoadFunctions = async () => {};

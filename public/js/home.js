@@ -1,4 +1,4 @@
-window.onload = () => {
+const pageOnLoadFunctions = async () => {
   const session = getCookie("fullsend_session");
 
   if (session) {
