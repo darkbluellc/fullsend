@@ -19,7 +19,8 @@ const MESSAGE_GROUP_ADD = "INSERT INTO messages_groups VALUES (?, ?)";
 
 exports.sendMessage = async (pool, userId, text, groups) => {
   const numbers = new Set();
-  const messageAdded = await execQuery(pool, MESSAGE_ADD, [userId, text]);
+  const cleanText = text.replace(/ +/g, " ").replace(/\n+/g, "\n");
+  const messageAdded = await execQuery(pool, MESSAGE_ADD, [userId, cleanText]);
   if (!messageAdded?.data?.insertId) {
     return;
   }
@@ -29,29 +30,26 @@ exports.sendMessage = async (pool, userId, text, groups) => {
       const number = groupNumber.phone_number;
       numbers.add(number);
     }
-    await execQuery(
-      pool,
-      MESSAGE_GROUP_ADD,
-      [messageAdded.data.insertId, group],
-    );
+    await execQuery(pool, MESSAGE_GROUP_ADD, [
+      messageAdded.data.insertId,
+      group,
+    ]);
   }
 
   for (const number of numbers) {
     if (SENDING_ENABLED) {
       try {
-        await client.messages.create(
-          {
-            body: text,
-            to: number,
-            from: TWILIO_FROM,
-          }
-        );
+        await client.messages.create({
+          body: cleanText,
+          to: number,
+          from: TWILIO_FROM,
+        });
       } catch (err) {
         console.error(err);
       }
     } else {
       console.log(
-        `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${text}\n`
+        `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${cleanText}\n`
       );
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "fullsend",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Fullsend allows allowed users to send bulk text messages to groups of recipients",
   "main": "server.js",
   "scripts": {
