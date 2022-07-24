@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD [ "nodemon", "--legacy-watch", "server.js"]
+CMD [ "nodemon", "--ignore", "./public/*", "--legacy-watch", "server.js"]
