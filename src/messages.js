@@ -6,6 +6,7 @@ const groupsApi = require("./groups.js");
 require("dotenv").config();
 
 const TWILIO_FROM = process.env.TWILIO_FROM;
+const TWILIO_SID = process.env.TWILIO_SID;
 const SENDING_ENABLED = process.env.SENDING_ENABLED == "true" ? true : false;
 
 const client = new twilio(
@@ -35,22 +36,24 @@ exports.sendMessage = async (pool, userId, text, groups) => {
       group,
     ]);
   }
+  let binding = [];
 
   for (const number of numbers) {
-    if (SENDING_ENABLED) {
-      try {
-        await client.messages.create({
-          body: cleanText,
-          to: number,
-          from: TWILIO_FROM,
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      console.log(
-        `Sending disabled...\nTo: ${number}\nFrom: ${TWILIO_FROM}\nText: ${cleanText}\n`
-      );
+    binding.push(JSON.stringify({ binding_type: "sms", address: number }));
+  }
+
+  if (SENDING_ENABLED) {
+    try {
+      await client.notify.services(TWILIO_SID).notifications.create({
+        toBinding: binding,
+        body: cleanText,
+      });
+    } catch (err) {
+      console.error(err);
     }
+  } else {
+    console.log("Sending disabled...");
+    console.log(binding);
+    console.log(cleanText);
   }
 };
