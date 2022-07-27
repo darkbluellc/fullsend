@@ -46,5 +46,5 @@ const handle403 = () => {
 // };
 
 const pageOnLoadFunctions = async () => {
-  if (isLoggedIn()) window.location.href = "/fullsend";
+  // if (isLoggedIn()) window.location.href = "/fullsend";
 };
