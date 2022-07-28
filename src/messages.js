@@ -2,6 +2,7 @@ const { execQuery } = require("./db");
 const twilio = require("twilio");
 
 const groupsApi = require("./groups.js");
+const usersApi = require("./users.js");
 
 require("dotenv").config();
 
@@ -37,6 +38,10 @@ exports.sendMessage = async (pool, userId, text, groups) => {
     ]);
   }
   let binding = [];
+
+  const userPhoneNumber = await usersApi.getUserPhoneNumber(pool, userId);
+
+  numbers.add(userPhoneNumber);
 
   for (const number of numbers) {
     binding.push(JSON.stringify({ binding_type: "sms", address: number }));
