@@ -12,8 +12,10 @@ exports.getUsers = async (pool) => execQuery(pool, USERS_GET, null);
 
 exports.getUser = async (pool, user) => execQuery(pool, USER_GET, user);
 
-exports.getUserIdPhone = async (pool, user) =>
-  execQuery(pool, USER_ID_PHONE_GET, user);
+exports.getUserPhoneNumber = async (pool, user) => {
+  const result = await execQuery(pool, USER_ID_PHONE_GET, user);
+  return result.data[0].phone_number;
+};
 
 exports.changePassword = async (pool, user, plaintextPassword) => {
   const hashedPassword = bcrypt.hashSync(plaintextPassword, 10);

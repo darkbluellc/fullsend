@@ -39,8 +39,7 @@ exports.sendMessage = async (pool, userId, text, groups) => {
   }
   let binding = [];
 
-  const userPhoneNumber = (await usersApi.getUserIdPhone(pool, userId)).data[0]
-    .phone_number;
+  const userPhoneNumber = await usersApi.getUserPhoneNumber(pool, userId);
 
   numbers.add(userPhoneNumber);
 
