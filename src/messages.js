@@ -2,6 +2,7 @@ const { execQuery } = require("./db");
 const twilio = require("twilio");
 
 const groupsApi = require("./groups.js");
+const usersApi = require("./users.js");
 
 require("dotenv").config();
 
@@ -35,6 +36,11 @@ exports.sendMessage = async (pool, userId, text, groups) => {
       group,
     ]);
   }
+
+  const userPhoneNumber = (await usersApi.getUserIdPhone(pool, userId)).data[0]
+    .phone_number;
+
+  numbers.add(userPhoneNumber);
 
   for (const number of numbers) {
     if (SENDING_ENABLED) {
