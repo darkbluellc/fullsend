@@ -107,6 +107,11 @@ authRouter.get("/api/groups", async (req, res) => {
   res.send(response_data);
 });
 
+authRouter.get("/api/groups/insequence", async (req, res) => {
+  const response_data = await groups.getGroupsInSequence(pool);
+  res.send(response_data);
+});
+
 authRouter.get(
   "/api/group/:group/contacts",
   async ({ params: { group: group } }, res) => {

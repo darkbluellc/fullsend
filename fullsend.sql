@@ -83,6 +83,8 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `fullsend`.`groups` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NULL,
+  `sequence` INT NULL,
+  `active` TINYINT NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 

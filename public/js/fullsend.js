@@ -6,7 +6,9 @@ const getGroups = async () => {
   if (isLoggedIn) {
     return (
       await (
-        await fetch("/auth/api/groups", { headers: { session: session } })
+        await fetch("/auth/api/groups/insequence", {
+          headers: { session: session },
+        })
       ).json()
     ).data;
   }
