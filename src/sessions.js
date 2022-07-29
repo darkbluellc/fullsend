@@ -7,7 +7,7 @@ const SESSION_CREATE =
   "INSERT INTO sessions (`id`, `user_id`, `last_login`, `expiration`) VALUES (?, ?, NOW(), NOW() + INTERVAL 5 DAY)";
 const SESSION_DESTROY = "DELETE FROM sessions WHERE `id` = ?";
 const SESSION_UPDATE =
-  "UPDATE sessions SET `expiration` = NOW() + INTERVAL 5 DAY WHERE `id` = ?";
+  "UPDATE sessions SET `expiration` = NOW() + INTERVAL 5 DAY WHERE `id` = ?; UPDATE sessions SET `last_seen` = NOW() where `id` = ?";
 const SESSION_GET = "SELECT * FROM sessions WHERE id = ?";
 
 exports.getUsers = async (pool, sessionId) => {
@@ -41,5 +41,5 @@ exports.logout = async (pool, sessionId) => {
 };
 
 exports.getSession = (pool, sessionId) => {
-  return execQuery(pool, SESSION_GET, sessionId);
+  return execQuery(pool, SESSION_GET, [sessionId, sessionId]);
 };
