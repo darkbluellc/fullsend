@@ -14,6 +14,15 @@ const getCookie = (cname) => {
   return undefined;
 };
 
+const getVersion = async () => {
+  const version = (await fetch("/api/version")).text();
+  return version;
+};
+
+const printVersionInNav = async () => {
+  document.getElementById("navVersion").text = await getVersion();
+};
+
 const checkLogin = async () => {
   const session = getCookie("fullsend_session");
   const login = (
@@ -58,4 +67,5 @@ window.onload = () => {
   } else if (window.href.location != "") {
     window.location.href = "/";
   }
+  printVersionInNav();
 };

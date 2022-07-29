@@ -35,7 +35,8 @@ const isLoggedIn = async (req, res, next) => {
     if (session.data[0]) {
       req.body.sessionInfo = session.data[0];
       // Valid session token found
-      sessions.sessionUpdate(pool, req.headers.session);
+      sessions.sessionExpirationUpdate(pool, req.headers.session);
+      sessions.sessionLastSeenUpdate(pool, req.headers.session);
       next();
     } else {
       //The token passed back is invalid
@@ -90,6 +91,10 @@ app.get("/changepassword", (req, res) => {
 
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
+});
+
+app.get("/api/version", async (req, res) => {
+  res.send(`v${version}`);
 });
 
 authRouter.get("/api/carriers", async (req, res) => {
