@@ -43,6 +43,5 @@ window.onload = () => {
       }
     })();
   }
-  printVersionInNav();
 };
 // comment for git

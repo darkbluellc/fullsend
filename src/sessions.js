@@ -6,10 +6,8 @@ const AUTHENTICATE = "SELECT id, password FROM users WHERE username = ?";
 const SESSION_CREATE =
   "INSERT INTO sessions (`id`, `user_id`, `login`, `last_seen` `expiration`) VALUES (?, ?, NOW(), NOW(), NOW() + INTERVAL 5 DAY)";
 const SESSION_DESTROY = "DELETE FROM sessions WHERE `id` = ?";
-const SESSION_EXPIRATION_UPDATE =
+const SESSION_UPDATE =
   "UPDATE sessions SET `expiration` = NOW() + INTERVAL 5 DAY WHERE `id` = ?";
-const SESSION_LAST_SEEN_UPDATE =
-  "UPDATE sessions SET `last_seen` = NOW() WHERE `id` = ?";
 const SESSION_GET = "SELECT * FROM sessions WHERE id = ?";
 
 exports.getUsers = async (pool, sessionId) => {
@@ -34,12 +32,8 @@ exports.login = async (pool, username, password) => {
   return undefined;
 };
 
-exports.sessionExpirationUpdate = async (pool, sessionId) => {
-  return execQuery(pool, SESSION_EXPIRATION_UPDATE, sessionId);
-};
-
-exports.sessionLastSeenUpdate = async (pool, sessionId) => {
-  return execQuery(pool, SESSION_LAST_SEEN_UPDATE, sessionId);
+exports.sessionUpdate = async (pool, sessionId) => {
+  return execQuery(pool, SESSION_UPDATE, sessionId);
 };
 
 exports.logout = async (pool, sessionId) => {
