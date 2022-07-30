@@ -86,7 +86,7 @@ window.onload = async () => {
   } else {
     window.location.href = "/";
   }
-
+  printVersionInNav();
   const groups = await getGroups();
   for (const group of groups) {
     document.getElementById(
@@ -96,4 +96,3 @@ window.onload = async () => {
     `;
   }
 };
-// comment for git
