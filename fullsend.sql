@@ -134,7 +134,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `fullsend`.`sessions` (
   `id` VARCHAR(50) NOT NULL,
   `user_id` INT NULL,
-  `last_login` DATETIME NULL,
+  `login` DATETIME NULL,
   `last_seen` DATETIME NULL,
   `expiration` DATETIME NULL,
   PRIMARY KEY (`id`),
