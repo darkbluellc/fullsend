@@ -92,6 +92,10 @@ app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
 
+app.get("/api/version", async (req, res) => {
+  res.send(`v${version}`);
+});
+
 authRouter.get("/api/carriers", async (req, res) => {
   const response_data = await carriers.getCarriers(pool);
   res.send(response_data);
