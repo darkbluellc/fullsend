@@ -43,5 +43,4 @@ window.onload = () => {
       }
     })();
   }
-  printVersionInNav();
 };

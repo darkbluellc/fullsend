@@ -7,5 +7,4 @@ window.onload = () => {
       if ((await sessionInfo).length != 0) window.location.href = "/fullsend";
     };
   }
-  printVersionInNav();
 };
