@@ -4,7 +4,7 @@ const crypto = require("crypto");
 
 const AUTHENTICATE = "SELECT id, password FROM users WHERE username = ?";
 const SESSION_CREATE =
-  "INSERT INTO sessions (`id`, `user_id`, `last_login`, `expiration`) VALUES (?, ?, NOW(), NOW() + INTERVAL 5 DAY)";
+  "INSERT INTO sessions (`id`, `user_id`, `last_login`, `last_seen`, `expiration`) VALUES (?, ?, NOW(), NOW(), NOW() + INTERVAL 5 DAY)";
 const SESSION_DESTROY = "DELETE FROM sessions WHERE `id` = ?";
 const SESSION_EXPIRATION_UPDATE =
   "UPDATE sessions SET `expiration` = NOW() + INTERVAL 5 DAY WHERE `id` = ?";
