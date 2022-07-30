@@ -78,6 +78,6 @@ window.onload = async () => {
   } else {
     window.location.href = "/";
   }
-  printVersionInNav();
+
   loadUsers();
 };
