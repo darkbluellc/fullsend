@@ -11,7 +11,7 @@ const SESSION_UPDATE =
 const SESSION_GET = "SELECT * FROM sessions WHERE id = ?";
 const SESSION_EXPIRED_DELETE = "DELETE FROM sessions WHERE expiration < NOW()";
 
-const deleteExpiredSessions = () => {
+const deleteExpiredSessions = (pool) => {
   execQuery(pool, SESSION_EXPIRED_DELETE, null);
 };
 
@@ -46,6 +46,6 @@ exports.logout = async (pool, sessionId) => {
 };
 
 exports.getSession = (pool, sessionId) => {
-  deleteExpiredSessions();
+  deleteExpiredSessions(pool);
   return execQuery(pool, SESSION_GET, sessionId);
 };
