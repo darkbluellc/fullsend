@@ -1,3 +1,8 @@
+const handle403 = () => {
+  document.getElementById("loginError").style.display = "block";
+  return;
+};
+
 const login = async () => {
   const username = document.getElementById("loginUsername").value;
   const password = document.getElementById("loginPassword").value;
@@ -25,24 +30,6 @@ const login = async () => {
   window.location.href = "/fullsend";
 };
 
-const handle403 = () => {
-  document.getElementById("loginError").style.display = "block";
-};
-
 const pageOnLoadFunctions = async () => {
-  const session = getCookie("fullsend_session");
-  if (session) {
-    (async () => {
-      const sessionInfo = (await checkLogin(session)).data;
-      if ((await sessionInfo).length != 0) {
-        window.location.href = "/fullsend";
-      } else {
-        console.log("expiring...");
-        document.cookie =
-          "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-      }
-    })();
-  }
   printVersionInNav();
-  // if (isLoggedIn()) window.location.href = "/fullsend";
 };
