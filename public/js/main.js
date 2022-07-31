@@ -52,6 +52,8 @@ const isLoggedIn = async () => {
 
 const isAdmin = async (userId = null) => {
   const session = getCookie("fullsend_session");
+  if (!session) return;
+
   if (!userId) {
     userId = (await checkLogin()).data[0].user_id;
   }
@@ -75,26 +77,40 @@ const logout = () => {
 const checkForRedirect = async () => {
   // if (window.location.pathname == "/") return;
 
+  const forwardPages = ["/", "/login"];
   const authPages = ["/fullsend"];
   const adminPages = ["/changepassword"];
 
   const isLoggedInVar = (await isLoggedIn()) ? true : false;
-  for (const page of [authPages, adminPages]) {
-    if (window.location.pathname == page && !isLoggedInVar) {
-      window.location.href = "/";
+
+  for (const page of forwardPages) {
+    if (window.location.pathname == page && isLoggedInVar) {
+      window.location.href = "/fullsend";
     }
   }
 
+  for (const page of [authPages, adminPages]) {
+    if (window.location.pathname == page && !isLoggedInVar) {
+      logout();
+      window.location.href = "/";
+      return;
+    }
+  }
   const isAdminVar = (await isAdmin()) ? true : false;
   for (const page of adminPages) {
     if (window.location.pathname == page && !isAdminVar) {
       window.location.href = "/fullsend";
+      return;
     }
   }
 };
 
-window.onload = () => {
+checkForRedirect();
+
+window.onload = async () => {
   printVersionInNav();
-  checkForRedirect();
   pageOnLoadFunctions();
+
+  if (await isAdmin())
+    document.getElementById("adminNavLink").style.display = "block";
 };

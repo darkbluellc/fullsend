@@ -6,21 +6,10 @@ const setLoggedIn = () => {
   document.getElementById("logout").style.display = "block";
 };
 
-// window.onload = () => {
-//   const session = getCookie("fullsend_session");
-
-//   if (session) {
-//     (async () => {
-//       const sessionInfo = (await checkLogin()).data;
-//       if ((await sessionInfo).length != 0) {
-//         setLoggedIn();
-//       } else {
-//         setLoggedOut();
-//       }
-//     })();
-//   } else {
-//     setLoggedOut();
-//   }
-// };
-
-const pageOnLoadFunctions = async () => {};
+const pageOnLoadFunctions = async () => {
+  if (await isLoggedIn()) {
+    setLoggedIn();
+  } else {
+    setLoggedOut();
+  }
+};
