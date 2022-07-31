@@ -2,16 +2,13 @@
 //Pretty sure the redirect if not logged in (line 73ish) will cover that
 const getGroups = async () => {
   const session = getCookie("fullsend_session");
-  const isLoggedIn = (await checkLogin()).data[0].user_id;
-  if (isLoggedIn) {
-    return (
-      await (
-        await fetch("/auth/api/groups/insequence", {
-          headers: { session: session },
-        })
-      ).json()
-    ).data;
-  }
+  return (
+    await (
+      await fetch("/auth/api/groups/insequence", {
+        headers: { session: session },
+      })
+    ).json()
+  ).data;
 };
 
 const getContactNumbersInGroup = async (group) => {
@@ -73,20 +70,7 @@ const sendMessage = async () => {
   document.getElementById("fullsendForm").reset();
 };
 
-window.onload = async () => {
-  const session = getCookie("fullsend_session");
-
-  if (session) {
-    (async () => {
-      const sessionInfo = (await checkLogin(session)).data;
-      if ((await sessionInfo).length == 0) {
-        logout();
-      }
-    })();
-  } else {
-    window.location.href = "/";
-  }
-  printVersionInNav();
+const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
   for (const group of groups) {
     document.getElementById(
