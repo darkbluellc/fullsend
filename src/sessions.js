@@ -9,6 +9,11 @@ const SESSION_DESTROY = "DELETE FROM sessions WHERE `id` = ?";
 const SESSION_UPDATE =
   "UPDATE sessions SET `expiration` = NOW() + INTERVAL 5 DAY WHERE `id` = ?";
 const SESSION_GET = "SELECT * FROM sessions WHERE id = ?";
+const SESSION_EXPIRED_DELETE = "DELETE FROM sessions WHERE expiration < NOW()";
+
+const deleteExpiredSessions = (pool) => {
+  execQuery(pool, SESSION_EXPIRED_DELETE, null);
+};
 
 exports.getUsers = async (pool, sessionId) => {
   return execQuery(pool, SESSION_GET, sessionId);
@@ -41,5 +46,6 @@ exports.logout = async (pool, sessionId) => {
 };
 
 exports.getSession = (pool, sessionId) => {
+  deleteExpiredSessions(pool);
   return execQuery(pool, SESSION_GET, sessionId);
 };
