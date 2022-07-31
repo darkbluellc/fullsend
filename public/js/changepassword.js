@@ -61,7 +61,7 @@ const changePassword = async () => {
   document.getElementById("changePasswordForm").reset();
 };
 
-window.onload = async () => {
+const pageOnLoadFunctions = async () => {
   const session = getCookie("fullsend_session");
   let sessionInfo;
 

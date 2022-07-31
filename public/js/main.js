@@ -36,15 +36,25 @@ const checkLogin = async () => {
   return login;
 };
 
-const logout = () => {
+const isLoggedIn = async () => {
   const session = getCookie("fullsend_session");
-  fetch("/api/logout", { headers: { session: session } });
-  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  window.location.href = "/";
+  if (!session) return false;
+  const login = (
+    await fetch("/auth/api/session/" + session, {
+      headers: { session: session },
+    })
+  ).json();
+  if ((await login).code == 401) {
+    return false;
+  }
+  return true;
 };
 
-const isAdmin = async (userId) => {
+const isAdmin = async (userId = null) => {
   const session = getCookie("fullsend_session");
+  if (!userId) {
+    userId = (await checkLogin()).data[0].user_id;
+  }
   const userInfo = (
     await (
       await fetch(`/auth/api/user/${userId}`, {
@@ -55,17 +65,36 @@ const isAdmin = async (userId) => {
   return userInfo.admin;
 };
 
-window.onload = () => {
+const logout = () => {
   const session = getCookie("fullsend_session");
-  if (session) {
-    (async () => {
-      const sessionInfo = await checkLogin();
-      if (!sessionInfo && window.href.location != "") {
-        window.location.href = "/";
-      }
-    })();
-  } else if (window.href.location != "") {
-    window.location.href = "/";
+  fetch("/api/logout", { headers: { session: session } });
+  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+  window.location.href = "/";
+};
+
+const checkForRedirect = async () => {
+  // if (window.location.pathname == "/") return;
+
+  const authPages = ["/fullsend"];
+  const adminPages = ["/changepassword"];
+
+  const isLoggedInVar = (await isLoggedIn()) ? true : false;
+  for (const page of [authPages, adminPages]) {
+    if (window.location.pathname == page && !isLoggedInVar) {
+      window.location.href = "/";
+    }
   }
+
+  const isAdminVar = (await isAdmin()) ? true : false;
+  for (const page of adminPages) {
+    if (window.location.pathname == page && !isAdminVar) {
+      window.location.href = "/fullsend";
+    }
+  }
+};
+
+window.onload = () => {
   printVersionInNav();
+  checkForRedirect();
+  pageOnLoadFunctions();
 };

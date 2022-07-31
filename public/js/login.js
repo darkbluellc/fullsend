@@ -29,7 +29,7 @@ const handle403 = () => {
   document.getElementById("loginError").style.display = "block";
 };
 
-window.onload = () => {
+const pageOnLoadFunctions = async () => {
   const session = getCookie("fullsend_session");
   if (session) {
     (async () => {
@@ -44,4 +44,5 @@ window.onload = () => {
     })();
   }
   printVersionInNav();
+  // if (isLoggedIn()) window.location.href = "/fullsend";
 };

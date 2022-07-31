@@ -73,7 +73,7 @@ const sendMessage = async () => {
   document.getElementById("fullsendForm").reset();
 };
 
-window.onload = async () => {
+const pageOnLoadFunctions = async () => {
   const session = getCookie("fullsend_session");
 
   if (session) {
