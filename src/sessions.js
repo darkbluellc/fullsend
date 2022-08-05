@@ -20,6 +20,8 @@ exports.getUsers = async (pool, sessionId) => {
 };
 
 exports.login = async (pool, username, password) => {
+  deleteExpiredSessions(pool);
+
   const authedUser = await execQuery(pool, AUTHENTICATE, username);
   if (authedUser.data[0]) {
     const id = authedUser.data[0].id;

@@ -14,7 +14,11 @@ exports.getUser = async (pool, user) => execQuery(pool, USER_GET, user);
 
 exports.getUserPhoneNumber = async (pool, user) => {
   const result = await execQuery(pool, USER_ID_PHONE_GET, user);
-  return result.data[0].phone_number;
+  if (result.data[0]) {
+    return result.data[0].phone_number;
+  } else {
+    return undefined;
+  }
 };
 
 exports.changePassword = async (pool, user, plaintextPassword) => {

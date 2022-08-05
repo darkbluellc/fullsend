@@ -6,7 +6,7 @@ const GROUPS_SEQ_ACTIVE_GET =
 const CONTACTS_IN_GROUP_GET =
   "SELECT * FROM contacts WHERE id IN (SELECT contact_id FROM contacts_groups WHERE group_id = ?)";
 const NUMBERS_IN_GROUP_GET =
-  "SELECT phone_number FROM contacts WHERE id IN (SELECT contact_id FROM contacts_groups WHERE group_id = ? and enabled = 1) and enabled = 1";
+  "SELECT phone_number FROM contacts WHERE id IN (SELECT contact_id FROM contacts_groups WHERE group_id = ? AND enabled = 1) AND enabled = 1";
 
 exports.getGroups = async (pool) => execQuery(pool, GROUPS_GET, null);
 
