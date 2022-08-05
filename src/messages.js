@@ -41,7 +41,7 @@ exports.sendMessage = async (pool, userId, text, groups) => {
 
   const userPhoneNumber = await usersApi.getUserPhoneNumber(pool, userId);
 
-  numbers.add(userPhoneNumber);
+  if (userPhoneNumber) numbers.add(userPhoneNumber);
 
   for (const number of numbers) {
     binding.push(JSON.stringify({ binding_type: "sms", address: number }));
