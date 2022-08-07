@@ -59,6 +59,62 @@
                 <p>Check out the code (and create an issue, if need be) <a href="https://github.com/darkbluellc/fullsend">on GitHub</a>.</p>
             </div>
         </div>
+        <hr class="mt-5">
+        <div class="row mt-5">
+            <div class="col">
+                <h2>Changelog</h2><br>
+                <h3>v1.3.0</h3>
+                <p>
+                    Adds admin feature: group recipient management (can't add/remove groups just yet).
+                </p>
+                <h3>v1.2.5</h3>
+                <p>
+                    Fixes a bug that happens when a user's phone number is set to null or there is missing that user/contact pair</a>.<br>
+                    Ensures that expired sessions are deleted <em>before</em> a user attempts to log in
+                </p>
+                <h3>v1.2.3</h3>
+                <p>
+                    Gracefully handles an incorrect username or password
+                </p>
+                <h3>v1.2.2</h3>
+                <p>
+                    Deletes expires sessions on each interaction with the application
+                </p>
+                <h3>v1.2.0</h3>
+                <p>
+                    Refactors page-loading code<br>
+                    Adds Dockerfile and docker-compose.yml specifically for development<br>
+                    Fixes some logic in the client-side JavaScript<br>
+                    Styling changes
+                </p>
+                <h3>v1.1.7</h3>
+                <p>
+                    Adds version information to the navbar
+                </p>
+                <h3>v1.1.5</h3>
+                <p>
+                    Fixes a bug with the "last seen" column 
+                </p>
+                <h3>v1.1.4</h3>
+                <p>
+                    Fixes SQL bug
+                </p>
+                <h3>v1.1.3</h3>
+                <p>
+                    Adds "last seen" column to database
+                </p>
+                <h3>v1.1.2</h3>
+                <p>
+                    Adds database columns for group sequence and if a group is active or not<br>
+                    Changes group listing on Fullsend page to reflect new sequencing and active status
+                </p>
+                <h3>v1.1.0</h3>
+                <p>
+                    Sends message to user's contact even if they're not in any of the recipient groups<br>
+                    Styling changes
+                </p>
+            </div>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
 </body>
