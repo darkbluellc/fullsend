@@ -79,7 +79,7 @@ const checkForRedirect = async () => {
 
   const forwardPages = ["/", "/login"];
   const authPages = ["/fullsend"];
-  const adminPages = ["/changepassword"];
+  const adminPages = ["/changepassword", "/group-management"];
 
   const isLoggedInVar = (await isLoggedIn()) ? true : false;
 

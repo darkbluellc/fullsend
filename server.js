@@ -88,6 +88,10 @@ app.get("/changepassword", (req, res) => {
   res.sendFile(path.join(__dirname, "public/changepassword.html"));
 });
 
+app.get("/group-management", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/group-management.html"));
+});
+
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
@@ -124,10 +128,10 @@ authRouter.get(
   }
 );
 
-authRouter.get("/api/titles", async (req, res) => {
-  const response_data = await titles.getTitles(pool);
-  res.send(response_data);
-});
+// authRouter.get("/api/titles", async (req, res) => {
+//   const response_data = await titles.getTitles(pool);
+//   res.send(response_data);
+// });
 
 authRouter.get("/api/users", async (req, res) => {
   const response_data = await users.getUsers(pool);
@@ -174,6 +178,26 @@ authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {
   );
   res.send(response_data);
 });
+
+authRouter.post("/api/groups/update/addcontact", isAdmin, async (req, res) => {
+  const response_data = await groups.addContactToGroup(
+    pool,
+    req.body.contactId,
+    req.body.groupId
+  );
+});
+
+authRouter.post(
+  "/api/groups/update/removecontact",
+  isAdmin,
+  async (req, res) => {
+    const response_data = await groups.removeContactFromGroup(
+      pool,
+      req.body.contactId,
+      req.body.groupId
+    );
+  }
+);
 
 authRouter.post("/api/messages/send", async (req, res) => {
   const userId = await sessions.getSession(pool, req.headers.session);
