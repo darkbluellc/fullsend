@@ -35,6 +35,44 @@ const getRecipientGroups = () => {
   return recipientGroups;
 };
 
+const handleSwitch = async (e) => {
+  const session = getCookie("fullsend_session");
+  const switches = document.getElementsByClassName("recipientSwitch");
+  const modalBody = document.getElementById("recipientModalBody");
+
+  let switchList = [];
+  for (const switchA of switches) {
+    if (switchA.checked) {
+      switchList.push(switchA.value);
+    }
+  }
+  const contactList = (
+    await (
+      await fetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`, {
+        headers: { session: session },
+      })
+    ).json()
+  ).data;
+
+  if (contactList.length == 0) {
+    modalBody.innerHTML = "None";
+  } else {
+    modalBody.innerHTML = `<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">First</th>
+        <th scope="col">Last</th>
+        <th scope="col">Phone number</th>
+      </tr></thead><tbody id="tableBody"></tbody></table>`;
+  }
+
+  for (const contact of contactList) {
+    document.getElementById(
+      "tableBody"
+    ).innerHTML += `<tr><td>${contact.first_name}</td><td>${contact.last_name}</td><td>${contact.phone_number}</td></tr>`;
+  }
+};
+
 const sendMessage = async () => {
   let error = false;
   document.getElementById("noMessageError").style.display = "none";
@@ -72,11 +110,18 @@ const sendMessage = async () => {
 
 const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
+  const recipientSwitch = document.getElementById("recipientSwitch");
+
   for (const group of groups) {
     document.getElementById(
       "fullsendRecipients"
-    ).innerHTML += `<input class="form-check-input" type="checkbox" role="switch" value=${group.id} id="recipientSwitch-${group.id}">
+    ).innerHTML += `<input class="form-check-input recipientSwitch" type="checkbox" role="switch" value=${group.id} id="recipientSwitch-${group.id}" onchange="handleSwitch();">
     <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
     `;
   }
+
+  const recipientListModal = new bootstrap.Modal(
+    document.getElementById("recipientListModal"),
+    options
+  );
 };
