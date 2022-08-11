@@ -121,7 +121,6 @@ const pageOnLoadFunctions = async () => {
   }
 
   const recipientListModal = new bootstrap.Modal(
-    document.getElementById("recipientListModal"),
-    options
+    document.getElementById("recipientListModal")
   );
 };
