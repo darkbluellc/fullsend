@@ -39,6 +39,8 @@ const handleSwitch = async (e) => {
   const session = getCookie("fullsend_session");
   const switches = document.getElementsByClassName("recipientSwitch");
   const modalBody = document.getElementById("recipientModalBody");
+  const viewListButton = document.getElementById("viewRecipientList");
+  let atLeastOneContact = false;
 
   let switchList = [];
   for (const switchA of switches) {
@@ -46,30 +48,41 @@ const handleSwitch = async (e) => {
       switchList.push(switchA.value);
     }
   }
-  const contactList = (
-    await (
-      await fetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
 
-  if (contactList.length == 0) {
-    modalBody.innerHTML = "None";
-  } else {
-    modalBody.innerHTML = `<table class="table">
+  console.log(`/auth/api/groups/contacts?groups=[${switchList}]`);
+
+  if (switchList.length > 0) {
+    const contactList = (
+      await (
+        await fetch(`/auth/api/groups/contacts?groups=[${switchList}]`, {
+          headers: { session: session },
+        })
+      ).json()
+    ).data;
+
+    if (contactList.length > 0) {
+      modalBody.innerHTML = `<table class="table">
     <thead>
       <tr>
         <th scope="col">First</th>
         <th scope="col">Last</th>
         <th scope="col">Phone number</th>
       </tr></thead><tbody id="tableBody"></tbody></table>`;
+
+      for (const contact of contactList) {
+        document.getElementById(
+          "tableBody"
+        ).innerHTML += `<tr><td>${contact.first_name}</td><td>${contact.last_name}</td><td>${contact.phone_number}</td></tr>`;
+      }
+
+      atLeastOneContact = true;
+      viewListButton.disabled = false;
+    }
   }
 
-  for (const contact of contactList) {
-    document.getElementById(
-      "tableBody"
-    ).innerHTML += `<tr><td>${contact.first_name}</td><td>${contact.last_name}</td><td>${contact.phone_number}</td></tr>`;
+  if (!atLeastOneContact) {
+    modalBody.innerHTML = "None";
+    viewListButton.disabled = true;
   }
 };
 
