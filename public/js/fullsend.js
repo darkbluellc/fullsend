@@ -49,14 +49,15 @@ const handleSwitch = async (e) => {
     }
   }
 
-  console.log(`/auth/api/groups/contacts?groups=[${switchList}]`);
-
   if (switchList.length > 0) {
     const contactList = (
       await (
-        await fetch(`/auth/api/groups/contacts?groups=[${switchList}]`, {
-          headers: { session: session },
-        })
+        await fetch(
+          `/auth/api/groups/contacts?groups=${switchList.join(",")}`,
+          {
+            headers: { session: session },
+          }
+        )
       ).json()
     ).data;
 

@@ -129,23 +129,12 @@ authRouter.get(
 );
 
 authRouter.get("/api/groups/contacts", async (req, res) => {
-  const groups = req.query.groups;
-
-  const response_data = await groups.getContactsInMultipleGroups(pool, groups);
+  const response_data = await groups.getContactsInMultipleGroups(
+    pool,
+    req.query.groups
+  );
   res.send(response_data);
 });
-
-// let groupsInt = [];
-// for await (const group of groups) {
-//   groupsInt.push(parseInt(groups[group]));
-// }
-
-// console.log(groupsInt);
-
-// authRouter.get("/api/titles", async (req, res) => {
-//   const response_data = await titles.getTitles(pool);
-//   res.send(response_data);
-// });
 
 authRouter.get("/api/users", async (req, res) => {
   const response_data = await users.getUsers(pool);
