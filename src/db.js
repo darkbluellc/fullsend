@@ -1,9 +1,4 @@
-const execQuery = async (
-  pool,
-  q,
-  args = null,
-  db = null
-) => {
+const execQuery = async (pool, q, args = null, db = null) => {
   let conn;
   try {
     conn = await pool.getConnection();
@@ -28,7 +23,7 @@ const execQuery = async (
 // Converts bigInts in an object to ints checking for overflow
 const convertBigInts = (obj) => {
   for (const key in obj) {
-    if (typeof obj[key] === 'bigint') {
+    if (typeof obj[key] === "bigint") {
       if (obj[key] > Number.MAX_SAFE_INTEGER) {
         console.error(`${key} is too large to convert to int`);
         obj[key] = Number.MAX_SAFE_INTEGER;
@@ -38,6 +33,6 @@ const convertBigInts = (obj) => {
     }
   }
   return obj;
-}
+};
 
 module.exports = { execQuery };

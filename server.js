@@ -136,11 +136,6 @@ authRouter.get("/api/groups/contacts", async (req, res) => {
   res.send(response_data);
 });
 
-// authRouter.get("/api/titles", async (req, res) => {
-//   const response_data = await titles.getTitles(pool);
-//   res.send(response_data);
-// });
-
 authRouter.get("/api/users", async (req, res) => {
   const response_data = await users.getUsers(pool);
   res.send(response_data);
