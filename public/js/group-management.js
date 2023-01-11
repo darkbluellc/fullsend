@@ -17,7 +17,7 @@ const loadContacts = async () => {
 
   const contacts = await (
     await (
-      await fetch("/auth/api/contacts", {
+      await fetch("/auth/api/contacts?active=1", {
         headers: { session: session },
       })
     ).json()

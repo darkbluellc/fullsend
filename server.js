@@ -106,7 +106,12 @@ authRouter.get("/api/carriers", async (req, res) => {
 });
 
 authRouter.get("/api/contacts", async (req, res) => {
-  const response_data = await contacts.getContacts(pool);
+  let response_data;
+  if (req.query.active == 1) {
+    response_data = await contacts.getActiveContacts(pool);
+  } else {
+    response_data = await contacts.getContacts(pool);
+  }
   res.send(response_data);
 });
 
