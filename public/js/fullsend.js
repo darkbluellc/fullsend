@@ -26,13 +26,32 @@ const getContactNumbersInGroup = async (group) => {
   }
 };
 
-const getRecipientGroups = () => {
-  let recipientGroups = [];
+const getContacts = async () => {
+  const session = getCookie("fullsend_session");
+  const contacts = (
+    await (
+      await fetch(`/auth/api/contacts?active=1&filtered=1`, {
+        headers: { session: session },
+      })
+    ).json()
+  ).data;
+  return contacts;
+};
+
+const getSelectedGroups = () => {
+  let selectedGroups = [];
   const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
   for (const checkbox of checkboxes) {
-    recipientGroups.push(checkbox.value);
+    selectedGroups.push(checkbox.value);
   }
-  return recipientGroups;
+  return selectedGroups;
+};
+
+const getSelectedIndividuals = () => {
+  const selectedIndividuals = $("#fullsendIndividualRecipients")
+    .select2("data")
+    .map((x) => x.id);
+  return selectedIndividuals;
 };
 
 const handleSwitch = async (e) => {
@@ -96,8 +115,10 @@ const sendMessage = async () => {
     document.getElementById("noMessageError").style.display = "block";
     error = true;
   }
-  const recipientGroups = getRecipientGroups();
-  if (recipientGroups.length == 0) {
+  const selectedGroups = getSelectedGroups();
+  const selectedIndividuals = getSelectedIndividuals();
+
+  if (selectedGroups.length == 0 && selectedIndividuals.length == 0) {
     document.getElementById("noRecipientsError").style.display = "block";
     error = true;
   }
@@ -109,7 +130,8 @@ const sendMessage = async () => {
     headers: { "Content-Type": "application/json", session: session },
     body: JSON.stringify({
       message: message,
-      groups: recipientGroups,
+      groups: selectedGroups,
+      individuals: selectedIndividuals,
     }),
   });
   document.getElementById(
@@ -120,6 +142,7 @@ const sendMessage = async () => {
 </div>`;
 
   document.getElementById("fullsendForm").reset();
+  $("#fullsendIndividualRecipients").val(null).trigger("change");
 };
 
 const pageOnLoadFunctions = async () => {
@@ -128,13 +151,29 @@ const pageOnLoadFunctions = async () => {
 
   for (const group of groups) {
     document.getElementById(
-      "fullsendRecipients"
+      "fullsendGroupRecipients"
     ).innerHTML += `<input class="form-check-input recipientSwitch" type="checkbox" role="switch" value=${group.id} id="recipientSwitch-${group.id}" onchange="handleSwitch();">
     <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
     `;
   }
 
+  const contacts = await getContacts();
+
+  for (const contact of contacts) {
+    document.getElementById(
+      "fullsendIndividualRecipients"
+    ).innerHTML += `<option value=${contact.id}>${contact.first_name} ${contact.last_name}</option>`;
+  }
+
   const recipientListModal = new bootstrap.Modal(
     document.getElementById("recipientListModal")
   );
+
+  $("select").select2({
+    theme: "bootstrap-5",
+  });
+  $("#form-select-sm").select2({
+    theme: "bootstrap-5",
+    dropdownParent: $("#form-select-sm").parent(),
+  });
 };

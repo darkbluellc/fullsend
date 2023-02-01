@@ -14,6 +14,7 @@ const sessions = require("./src/sessions.js");
 const messages = require("./src/messages.js");
 
 const { version } = require("./package.json");
+const { response } = require("express");
 
 require("dotenv").config();
 
@@ -108,7 +109,11 @@ authRouter.get("/api/carriers", async (req, res) => {
 authRouter.get("/api/contacts", async (req, res) => {
   let response_data;
   if (req.query.active == 1) {
-    response_data = await contacts.getActiveContacts(pool);
+    if (req.query.filtered == 1) {
+      response_data = await contacts.getFilteredActiveContacts(pool);
+    } else {
+      response_data = await contacts.getActiveContacts(pool);
+    }
   } else {
     response_data = await contacts.getContacts(pool);
   }
@@ -213,7 +218,8 @@ authRouter.post("/api/messages/send", async (req, res) => {
     pool,
     userId.data[0].user_id,
     req.body.message,
-    req.body.groups
+    req.body.groups,
+    req.body.individuals
   );
   res.send(response_data);
 });

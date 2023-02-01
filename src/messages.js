@@ -3,6 +3,7 @@ const twilio = require("twilio");
 
 const groupsApi = require("./groups.js");
 const usersApi = require("./users.js");
+const contactsApi = require("./contacts.js");
 
 require("dotenv").config();
 
@@ -18,8 +19,9 @@ const client = new twilio(
 const MESSAGE_ADD =
   "INSERT INTO messages (`id`, `user_id`, `text`, `sent_at`) VALUES (null, ?, ?, NOW())";
 const MESSAGE_GROUP_ADD = "INSERT INTO messages_groups VALUES (?, ?)";
+const MESSAGE_CONTACT_ADD = "INSERT INTO messages_contacts VALUES (?, ?)";
 
-exports.sendMessage = async (pool, userId, text, groups) => {
+exports.sendMessage = async (pool, userId, text, groups, individuals) => {
   const numbers = new Set();
   const cleanText = text.replace(/ +/g, " ").replace(/\n+/g, "\n");
   const messageAdded = await execQuery(pool, MESSAGE_ADD, [userId, cleanText]);
@@ -37,6 +39,17 @@ exports.sendMessage = async (pool, userId, text, groups) => {
       group,
     ]);
   }
+
+  for (const id of individuals) {
+    const number = (await contactsApi.getContactPhone(pool, id)).data[0]
+      .phone_number;
+    numbers.add(number);
+    await execQuery(pool, MESSAGE_CONTACT_ADD, [
+      messageAdded.data.insertId,
+      id,
+    ]);
+  }
+
   let binding = [];
 
   const userPhoneNumber = await usersApi.getUserPhoneNumber(pool, userId);
