@@ -174,6 +174,6 @@ const pageOnLoadFunctions = async () => {
   });
   $("#form-select-sm").select2({
     theme: "bootstrap-5",
-    dropdownParent: $("#form-select-sm").parent(), // Required for dropdown styling
+    dropdownParent: $("#form-select-sm").parent(),
   });
 };

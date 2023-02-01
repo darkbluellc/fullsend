@@ -47,6 +47,12 @@ const isLoggedIn = async () => {
   if ((await login).code == 401) {
     return false;
   }
+
+  const days = 5;
+  const expires = new Date(Date.now() + days * 86400 * 1000).toUTCString();
+
+  document.cookie = `fullsend_session=${session}; expires=${expires}`;
+
   return true;
 };
 
