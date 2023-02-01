@@ -48,7 +48,9 @@ const getSelectedGroups = () => {
 };
 
 const getSelectedIndividuals = () => {
-  let selectedIndividuals = [];
+  const selectedIndividuals = $("#fullsendIndividualRecipients")
+    .select2("data")
+    .map((x) => x.id);
   return selectedIndividuals;
 };
 
