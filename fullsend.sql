@@ -179,6 +179,23 @@ CREATE TABLE IF NOT EXISTS `fullsend`.`users` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS `fullsend`.`messages_contacts` (
+  `message_id` INT NOT NULL,
+  `contact_id` INT NOT NULL,
+  PRIMARY KEY (`message_id`, `contact_id`),
+  INDEX `fk_contacts_id_idx` (`contact_id` ASC),
+  CONSTRAINT `fk_messages_contacts_message_id`
+    FOREIGN KEY (`message_id`)
+    REFERENCES `fullsend`.`messages` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_messages_contacts_contact_id`
+    FOREIGN KEY (`contact_id`)
+    REFERENCES `fullsend`.`contacts` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
