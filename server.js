@@ -218,7 +218,8 @@ authRouter.post("/api/messages/send", async (req, res) => {
     pool,
     userId.data[0].user_id,
     req.body.message,
-    req.body.groups
+    req.body.groups,
+    req.body.individuals
   );
   res.send(response_data);
 });

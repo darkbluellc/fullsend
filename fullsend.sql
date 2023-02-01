@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `fullsend`.`messages_groups` (
     REFERENCES `fullsend`.`messages` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_messages_groups_group_id`
+  CONSTRAINT `fk_messages_groups_group_id`
     FOREIGN KEY (`group_id`)
     REFERENCES `fullsend`.`groups` (`id`)
     ON DELETE NO ACTION
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `fullsend`.`messages_contacts` (
     REFERENCES `fullsend`.`messages` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_messages_contacts_contact_id`
+  CONSTRAINT `fk_messages_contacts_contact_id`
     FOREIGN KEY (`contact_id`)
     REFERENCES `fullsend`.`contacts` (`id`)
     ON DELETE NO ACTION

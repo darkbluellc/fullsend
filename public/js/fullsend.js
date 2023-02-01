@@ -131,7 +131,7 @@ const sendMessage = async () => {
     body: JSON.stringify({
       message: message,
       groups: selectedGroups,
-      individuals: individuals,
+      individuals: selectedIndividuals,
     }),
   });
   document.getElementById(
@@ -142,6 +142,7 @@ const sendMessage = async () => {
 </div>`;
 
   document.getElementById("fullsendForm").reset();
+  $("#fullsendIndividualRecipients").val(null).trigger("change");
 };
 
 const pageOnLoadFunctions = async () => {
