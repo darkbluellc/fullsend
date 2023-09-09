@@ -52,16 +52,48 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 <form id="fullsendForm">
+<<<<<<< Updated upstream
                     <div class="mb-3">
                         <label for="fullsendRecipients" class="form-label">Recipients</label><br>
                         <div class="form-check form-switch" id="fullsendRecipients">
+=======
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label for="fullsendGroupRecipients" class="form-label">Groups</label><br>
+                                <div class="form-check form-switch" id="fullsendGroupRecipients" onchange="handleMessagePreview();">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label for="fullsendIndividualRecipients" class="form-label">Individuals</label><br>
+                                <select class="form-select form-select-sm" id="fullsendIndividualRecipients" data-placeholder="Select individuals" multiple>
+                                </select>
+                            </div>
+>>>>>>> Stashed changes
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="fullsendMessage" class="form-label">Message</label>
+<<<<<<< Updated upstream
                         <textarea class="form-control" id="fullsendMessage" rows="3"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary" onclick="sendMessage(); return false;">Send message!</button>
+=======
+                        <p><small><span class="reminder">Reminder: make sure you specify what your message is referring to. Many Fullsend recipients are in multiple groups.</span></small></p>
+                        <textarea class="form-control mb-5" id="fullsendMessage" rows="3" onkeyup="handleMessagePreview()" onblur="handleMessagePreview();"></textarea>
+                    </div>
+                    
+                    <div class="container">
+                        <div class="imessage">
+                            <p class="from-me" id="preview">Your preview will appear here...</p>
+                        </div>
+                    </div>
+                    
+                    <p><small>Even if you're not in the receipient group(s) or listed as an individual recipient, you will receive a copy of this message as the sender. This may take up to several minutes when there are many recipients.</small></p>
+                    <button type="submit" class="btn btn-primary mb-3" onclick="sendMessage(); return false;">Send message!</button>
+>>>>>>> Stashed changes
                     <div id="noRecipientsError" class="invalid-feedback">
                         You must select at least one recipient group.
                     </div>
