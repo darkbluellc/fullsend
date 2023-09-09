@@ -30,7 +30,7 @@ const getContacts = async () => {
   const session = getCookie("fullsend_session");
   const contacts = (
     await (
-      await fetch(`/auth/api/contacts?active=1&filtered=1`, {
+      await fetch("/auth/api/contacts?active=1&filtered=1", {
         headers: { session: session },
       })
     ).json()
@@ -38,13 +38,28 @@ const getContacts = async () => {
   return contacts;
 };
 
-const getSelectedGroups = () => {
+const getSelectedGroups = (categories = false) => {
   let selectedGroups = [];
   const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
-  for (const checkbox of checkboxes) {
-    selectedGroups.push(checkbox.value);
-  }
+  if (categories) {
+    for (const checkbox of checkboxes) {
+      selectedGroups.push(checkbox.dataset.category);
+    }
+  } else {
+    for (const checkbox of checkboxes) {
+      selectedGroups.push(checkbox.value);
+    }
+  } 
   return selectedGroups;
+};
+            
+const getSelectedGroupsCategories = () => {
+  const groups = new Set(getSelectedGroups(true));
+  let text = "";
+  for (const group of groups) {
+    text += "[" + group + "] ";
+  }
+  return text.trim();
 };
 
 const getSelectedIndividuals = () => {
@@ -55,6 +70,7 @@ const getSelectedIndividuals = () => {
 };
 
 const handleSwitch = async (e) => {
+  handleMessagePreview();
   const session = getCookie("fullsend_session");
   const switches = document.getElementsByClassName("recipientSwitch");
   const modalBody = document.getElementById("recipientModalBody");
@@ -110,7 +126,9 @@ const sendMessage = async () => {
   let error = false;
   document.getElementById("noMessageError").style.display = "none";
   document.getElementById("noRecipientsError").style.display = "none";
-  const message = document.getElementById("fullsendMessage").value;
+  const groupCategories = getSelectedGroupsCategories();
+  const inputMessage = document.getElementById("fullsendMessage").value;
+  const message = (groupCategories != "") ? inputMessage + "\n" + groupCategories : inputMessage;
   if (/^\s*$/.test(message)) {
     document.getElementById("noMessageError").style.display = "block";
     error = true;
@@ -145,6 +163,12 @@ const sendMessage = async () => {
   $("#fullsendIndividualRecipients").val(null).trigger("change");
 };
 
+const handleMessagePreview = () => {
+  const fsmText = document.getElementById("fullsendMessage").value.trim();
+  const selectedCategories = getSelectedGroupsCategories();
+  document.getElementById("preview").innerHTML = (fsmText == "") ? "<span style=\"color:#888\">Your preview will appear here...</span>": fsmText + "\n" + selectedCategories;
+};
+
 const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
   const recipientSwitch = document.getElementById("recipientSwitch");
@@ -152,9 +176,9 @@ const pageOnLoadFunctions = async () => {
   for (const group of groups) {
     document.getElementById(
       "fullsendGroupRecipients"
-    ).innerHTML += `<input class="form-check-input recipientSwitch" type="checkbox" role="switch" value=${group.id} id="recipientSwitch-${group.id}" onchange="handleSwitch();">
-    <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
-    `;
+    ).innerHTML += `<input class="form-check-input recipientSwitch" type="checkbox" role="switch" value=${group.id} data-category="${group.category}" id="recipientSwitch-${group.id}" onchange="handleSwitch();">
+                            <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
+                            `;
   }
 
   const contacts = await getContacts();
