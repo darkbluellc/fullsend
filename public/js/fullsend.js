@@ -166,7 +166,7 @@ const sendMessage = async () => {
 const handleMessagePreview = () => {
   const fsmText = document.getElementById("fullsendMessage").value.trim();
   const selectedCategories = getSelectedGroupsCategories();
-  document.getElementById("preview").innerHTML = (fsmText == "") ? "<span style=\"color:#888\">Your preview will appear here...</span>": fsmText + "\n" + selectedCategories;
+  document.getElementById("preview").innerHTML = (fsmText == "") ? "<span style=\"color:#888\">Your preview will appear here...</span>": fsmText + "<br>" + selectedCategories;
 };
 
 const pageOnLoadFunctions = async () => {
