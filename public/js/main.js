@@ -76,7 +76,7 @@ const isAdmin = async (userId = null) => {
 const logout = async () => {
   const session = getCookie("fullsend_session");
   try {
-    await fetch("/api/logout", { method: "POST", headers: { session } });
+    await fetch("/api/logout", { headers: { session } });
   } catch (e) {
     console.error("Logout request failed:", e);
   }
