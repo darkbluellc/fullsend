@@ -73,9 +73,13 @@ const isAdmin = async (userId = null) => {
   return userInfo.admin;
 };
 
-const logout = () => {
+const logout = async () => {
   const session = getCookie("fullsend_session");
-  fetch("/api/logout", { headers: { session: session } });
+  try {
+    await fetch("/api/logout", { method: "POST", headers: { session } });
+  } catch (e) {
+    console.error("Logout request failed:", e);
+  }
   document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
   window.location.href = "/";
 };
