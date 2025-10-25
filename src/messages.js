@@ -17,7 +17,7 @@ const client = new twilio(
 );
 
 const MESSAGE_ADD =
-  "INSERT INTO messages (`id`, `user_id`, `text`, `sent_at`) VALUES (null, ?, ?, NOW())";
+"INSERT INTO messages (`id`, `user_id`, `text`, `sent_at`) VALUES (null, ?, ?, NOW())";
 const MESSAGE_GROUP_ADD = "INSERT INTO messages_groups VALUES (?, ?)";
 const MESSAGE_CONTACT_ADD = "INSERT INTO messages_contacts VALUES (?, ?)";
 
@@ -39,39 +39,44 @@ exports.sendMessage = async (pool, userId, text, groups, individuals) => {
       group,
     ]);
   }
-
+  
   for (const id of individuals) {
     const number = (await contactsApi.getContactPhone(pool, id)).data[0]
-      .phone_number;
+    .phone_number;
     numbers.add(number);
     await execQuery(pool, MESSAGE_CONTACT_ADD, [
       messageAdded.data.insertId,
       id,
     ]);
   }
-
+  
   let binding = [];
-
+  
   const userPhoneNumber = await usersApi.getUserPhoneNumber(pool, userId);
-
+  
   if (userPhoneNumber) numbers.add(userPhoneNumber);
-
+  
   for (const number of numbers) {
     binding.push(JSON.stringify({ binding_type: "sms", address: number }));
   }
-
+  
   if (SENDING_ENABLED) {
     try {
-      await client.notify.services(TWILIO_SID).notifications.create({
-        toBinding: binding,
-        body: cleanText,
-      });
+      for (const number of numbers) {
+        await client.messages.create({
+          from: TWILIO_FROM,
+          to: number,
+          body: cleanText
+        });
+      }
     } catch (err) {
       console.error(err);
     }
   } else {
     console.log("Sending disabled...");
-    console.log(binding);
-    console.log(cleanText);
+    for (const number of numbers) {
+      console.log(`to: ${number}`);
+    }
+    console.log(`body: ${cleanText}`);
   }
 };
