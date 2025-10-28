@@ -52,7 +52,7 @@ const getSelectedGroups = (categories = false) => {
   } 
   return selectedGroups;
 };
-            
+
 const getSelectedGroupsCategories = () => {
   const groups = new Set(getSelectedGroups(true));
   let text = "";
@@ -64,8 +64,8 @@ const getSelectedGroupsCategories = () => {
 
 const getSelectedIndividuals = () => {
   const selectedIndividuals = $("#fullsendIndividualRecipients")
-    .select2("data")
-    .map((x) => x.id);
+  .select2("data")
+  .map((x) => x.id);
   return selectedIndividuals;
 };
 
@@ -76,14 +76,14 @@ const handleSwitch = async (e) => {
   const modalBody = document.getElementById("recipientModalBody");
   const viewListButton = document.getElementById("viewRecipientList");
   let atLeastOneContact = false;
-
+  
   let switchList = [];
   for (const switchA of switches) {
     if (switchA.checked) {
       switchList.push(switchA.value);
     }
   }
-
+  
   if (switchList.length > 0) {
     const contactList = (
       await (
@@ -95,7 +95,7 @@ const handleSwitch = async (e) => {
         )
       ).json()
     ).data;
-
+    
     if (contactList.length > 0) {
       modalBody.innerHTML = `<table class="table">
     <thead>
@@ -104,18 +104,18 @@ const handleSwitch = async (e) => {
         <th scope="col">Last</th>
         <th scope="col">Phone number</th>
       </tr></thead><tbody id="tableBody"></tbody></table>`;
-
+      
       for (const contact of contactList) {
         document.getElementById(
           "tableBody"
         ).innerHTML += `<tr><td>${contact.first_name}</td><td>${contact.last_name}</td><td>${contact.phone_number}</td></tr>`;
       }
-
+      
       atLeastOneContact = true;
       viewListButton.disabled = false;
     }
   }
-
+  
   if (!atLeastOneContact) {
     modalBody.innerHTML = "None";
     viewListButton.disabled = true;
@@ -135,14 +135,17 @@ const sendMessage = async () => {
   }
   const selectedGroups = getSelectedGroups();
   const selectedIndividuals = getSelectedIndividuals();
-
+  
   if (selectedGroups.length == 0 && selectedIndividuals.length == 0) {
     document.getElementById("noRecipientsError").style.display = "block";
     error = true;
   }
   if (error) return -1;
-
+  
   const session = getCookie("fullsend_session");
+
+  document.getElementById("sendButton").disabled = true;
+
   const result = await fetch("/auth/api/messages/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", session: session },
@@ -158,13 +161,21 @@ const sendMessage = async () => {
   Your message has been sent!
   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>`;
-
+  
   document.getElementById("fullsendForm").reset();
   $("#fullsendIndividualRecipients").val(null).trigger("change");
 };
 
 const handleMessagePreview = () => {
   const fsmText = document.getElementById("fullsendMessage").value.trim();
+  
+  if (fsmText != "") {
+    document.getElementById("sendButton").disabled = false;
+  }
+  else {
+    document.getElementById("sendButton").disabled = true;
+  }
+  
   const selectedCategories = getSelectedGroupsCategories();
   document.getElementById("preview").innerHTML = (fsmText == "") ? "<span style=\"color:#888\">Your preview will appear here...</span>": fsmText + "<br>" + selectedCategories;
 };
@@ -172,7 +183,7 @@ const handleMessagePreview = () => {
 const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
   const recipientSwitch = document.getElementById("recipientSwitch");
-
+  
   for (const group of groups) {
     document.getElementById(
       "fullsendGroupRecipients"
@@ -180,19 +191,19 @@ const pageOnLoadFunctions = async () => {
                             <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
                             `;
   }
-
+  
   const contacts = await getContacts();
-
+  
   for (const contact of contacts) {
     document.getElementById(
       "fullsendIndividualRecipients"
     ).innerHTML += `<option value=${contact.id}>${contact.first_name} ${contact.last_name}</option>`;
   }
-
+  
   const recipientListModal = new bootstrap.Modal(
     document.getElementById("recipientListModal")
   );
-
+  
   $("select").select2({
     theme: "bootstrap-5",
   });
