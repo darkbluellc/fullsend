@@ -75,7 +75,8 @@ exports.sendMessage = async (pool, userId, text, groups, individuals) => {
   } else {
     console.log("Sending disabled...");
     for (const number of numbers) {
-      setTimeout(() => console.log(`to: ${number}`), 150);
+      console.log(`to: ${number}`);
+      await new Promise(res => setTimeout(res, 100));
     }
     console.log(`body: ${cleanText}`);
   }
