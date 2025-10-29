@@ -112,7 +112,7 @@
                         </div>
                     </div>
                     <p><small>Even if you're not in the receipient group(s) or listed as an individual recipient, you will receive a copy of this message as the sender. This may take up to several minutes when there are many recipients.</small></p>
-                    <button type="submit" class="btn btn-primary mb-3" onclick="sendMessage(); return false;">Send message!</button>
+                    <button id="sendButton" type="submit" class="btn btn-primary mb-3" onclick="sendMessage(); return false;" disabled>Send message!</button>
                     <div id="noRecipientsError" class="invalid-feedback">
                         You must select at least one recipient individual or group.
                     </div>
