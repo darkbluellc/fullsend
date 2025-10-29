@@ -143,9 +143,10 @@ const sendMessage = async () => {
   if (error) return -1;
   
   const session = getCookie("fullsend_session");
-
+  
   document.getElementById("sendButton").disabled = true;
-
+  document.getElementById("fullsendMessage").disabled = true;
+  
   const result = await fetch("/auth/api/messages/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", session: session },
@@ -163,6 +164,7 @@ const sendMessage = async () => {
 </div>`;
   
   document.getElementById("fullsendForm").reset();
+  document.getElementById("fullsendMessage").disabled = false;
   $("#fullsendIndividualRecipients").val(null).trigger("change");
 };
 
