@@ -156,6 +156,9 @@ authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
 authRouter.get("/api/session/info", async (req, res) => {
   if (req.body.sessionInfo) {
     const sessionInfo = req.body.sessionInfo;
+    // Expose the configured admin role name to the client so browser-side checks
+    // don't need to rely on Node-only process.env variables.
+    sessionInfo.adminRole = process.env.KEYCLOAK_ADMIN_ROLE || 'admin';
     // Try to map to a local user record for convenience
     let localUser = null;
     try {

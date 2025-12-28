@@ -29,10 +29,15 @@ const isAdmin = async (userId = null) => {
   const claims = info.data && info.data.sessionInfo && info.data.sessionInfo.claims;
   if (!claims) return false;
   const realmRoles = (claims.realm_access && claims.realm_access.roles) || [];
-  if (realmRoles.includes(process.env.KEYCLOAK_ADMIN_ROLE || 'admin')) return true;
-  if (claims.resource_access && process.env.KEYCLOAK_CLIENT) {
-    const ra = claims.resource_access[process.env.KEYCLOAK_CLIENT];
-    if (ra && ra.roles && ra.roles.includes(process.env.KEYCLOAK_ADMIN_ROLE || 'admin')) return true;
+  // Server should expose which role name represents admin; fall back to 'admin'
+  const adminRole = (info.data && info.data.sessionInfo && info.data.sessionInfo.adminRole) || 'admin';
+  if (realmRoles.includes(adminRole)) return true;
+  if (claims.resource_access) {
+    // Try to find admin role in any client resource_access entry
+    for (const clientKey of Object.keys(claims.resource_access)) {
+      const ra = claims.resource_access[clientKey];
+      if (ra && ra.roles && ra.roles.includes(adminRole)) return true;
+    }
   }
   return false;
 };
