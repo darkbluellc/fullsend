@@ -90,6 +90,11 @@ app.get("/group-management", (req, res) => {
   res.sendFile(path.join(__dirname, "public/group-management.html"));
 });
 
+app.get("/no-access", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/no-access.html"));
+});
+
+
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
 });
