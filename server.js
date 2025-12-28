@@ -189,6 +189,20 @@ app.get('/api/login', async (req, res) => {
   }
 });
 
+// Debug endpoint (no role enforcement) to inspect session info during development
+app.get('/api/debug/session', async (req, res) => {
+  try {
+    if (req.session && req.session.tokenSet) {
+      const sessionInfo = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
+      return res.send({ success: true, data: { sessionInfo, localUser: req.session.localUser || null } });
+    }
+    return res.status(404).send({ success: false, error: 'No session' });
+  } catch (e) {
+    console.error('debug session failed', e && e.message);
+    return res.status(500).send({ success: false, error: 'Server error' });
+  }
+});
+
 app.get('/api/callback', async (req, res) => {
   try {
     await auth.handleCallback(req);

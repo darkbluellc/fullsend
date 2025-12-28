@@ -96,25 +96,6 @@ async function handleCallback(req) {
       console.warn('access token decode failed', e2 && e2.message);
     }
   }
-  // If we still don't have role information, try userinfo (useful if access token is opaque)
-  try {
-    if (!req.session.accessClaims || (!req.session.accessClaims.realm_access && !req.session.accessClaims.resource_access)) {
-      if (tokenSet && tokenSet.access_token) {
-        try {
-          const oidcClient = await initClient();
-          const ui = await oidcClient.userinfo(tokenSet.access_token);
-          if (ui) {
-            req.session.accessClaims = ui;
-          }
-        } catch (uiErr) {
-          // userinfo may not be available; don't block login
-          console.warn('userinfo fetch failed', uiErr && uiErr.message);
-        }
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
   return tokenSet;
 }
 

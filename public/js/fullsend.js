@@ -26,6 +26,7 @@ const getContactNumbersInGroup = async (group) => {
   for (const contact of contacts) {
     numbers.push(contact.phone_number);
   }
+  return numbers;
 };
 
 const getContacts = async () => {
@@ -79,7 +80,8 @@ const handleSwitch = async (e) => {
   }
   
   if (switchList.length > 0) {
-    const contactList = (await (await fetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`)).json()).data;
+    const contactResp = await safeJsonFetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`);
+    const contactList = contactResp ? contactResp.data : [];
     
     if (contactList.length > 0) {
       modalBody.innerHTML = `<table class="table">
