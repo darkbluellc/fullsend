@@ -1,5 +1,3 @@
-//TODO: this doesn't actually need isLoggedIn here, I don't think...
-//Pretty sure the redirect if not logged in (line 73ish) will cover that
 const safeJsonFetch = async (url, options = {}) => {
   try {
     const resp = await fetch(url, options);
@@ -170,8 +168,9 @@ const handleMessagePreview = () => {
 };
 
 const pageOnLoadFunctions = async () => {
-const recipientSwitch = document.getElementById("recipientSwitch");
-  
+  const groups = await getGroups();
+  const recipientSwitch = document.getElementById("recipientSwitch");
+
   for (const group of groups) {
     document.getElementById(
       "fullsendGroupRecipients"
