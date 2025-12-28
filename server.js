@@ -13,6 +13,7 @@ const users = require("./src/users.js");
 const sessions = require("./src/sessions.js");
 const auth = require("./src/auth.js");
 const messages = require("./src/messages.js");
+const session = require('express-session');
 
 const { version } = require("./package.json");
 const { response } = require("express");
@@ -28,6 +29,14 @@ const pool = mariadb.createPool({
 
 // Initialize express app
 const PORT = process.env.PORT || 8080;
+
+// Session middleware (required for server-side login flow)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'a very long secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }, // set secure: true if using HTTPS
+}));
 
 // Initialize OIDC discovery (will be awaited before server starts)
 // Note: initOidc is async; we'll call it before starting the server below.
@@ -161,14 +170,40 @@ authRouter.get("/api/session/info", async (req, res) => {
   }
 });
 
-app.get('/api/login', (req, res) => {
-  // Login handled by Keycloak. Frontend should redirect users to Keycloak login.
-  res.send({ info: 'Login handled by Keycloak OIDC' });
+app.get('/api/login', async (req, res) => {
+  try {
+    const url = await auth.getAuthorizationUrl(req);
+    return res.redirect(url);
+  } catch (err) {
+    console.error('login redirect failed', err && err.message);
+    return res.status(500).send({ error: 'Login redirect failed' });
+  }
+});
+
+app.get('/api/callback', async (req, res) => {
+  try {
+    await auth.handleCallback(req);
+    // Redirect to app home or post-login page
+    return res.redirect('/fullsend');
+  } catch (err) {
+    console.error('callback handling failed', err && err.message);
+    return res.status(500).send({ error: 'Callback processing failed' });
+  }
 });
 
 app.get('/api/logout', (req, res) => {
-  // Logout handled by Keycloak end-session endpoint; provide info to client
-  res.send({ info: 'Logout via Keycloak end-session endpoint' });
+  try {
+    const logoutUrl = auth.getLogoutUrl(req);
+    // destroy local session
+    if (req.session) {
+      req.session.destroy(() => {});
+    }
+    if (logoutUrl) return res.redirect(logoutUrl);
+    return res.redirect('/');
+  } catch (err) {
+    console.error('logout failed', err && err.message);
+    return res.status(500).send({ error: 'Logout failed' });
+  }
 });
 
 authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {

@@ -1,7 +1,8 @@
-const { Issuer } = require("openid-client");
-const { createRemoteJWKSet, jwtVerify, decodeJwt } = require("jose");
+const { Issuer, generators } = require("openid-client");
+const { createRemoteJWKSet, jwtVerify } = require("jose");
 
 let oidc = null;
+let client = null;
 
 async function initOidc() {
   if (oidc) return oidc;
@@ -17,9 +18,95 @@ async function initOidc() {
   return oidc;
 }
 
-// Middleware: look for Authorization: Bearer <token> header and verify using JWKS
+async function initClient() {
+  if (client) return client;
+  const oidcCfg = await initOidc();
+  const issuer = oidcCfg.issuerObj;
+  const clientId = process.env.KEYCLOAK_CLIENT;
+  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
+  const redirectUri = process.env.KEYCLOAK_REDIRECT_URI || "http://localhost:8080/api/callback";
+
+  if (!clientId) throw new Error("KEYCLOAK_CLIENT must be set for Authorization Code flow");
+
+  client = new issuer.Client({
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uris: [redirectUri],
+    response_types: ["code"],
+  });
+
+  return client;
+}
+
+async function getAuthorizationUrl(req) {
+  const oidcClient = await initClient();
+  const redirectUri = process.env.KEYCLOAK_REDIRECT_URI || "http://localhost:8080/api/callback";
+
+  const codeVerifier = generators.codeVerifier();
+  const codeChallenge = await generators.codeChallenge(codeVerifier);
+  const state = generators.random();
+
+  // store verifier+state in session
+  if (!req.session) throw new Error("Session middleware required for login flow");
+  req.session.code_verifier = codeVerifier;
+  req.session.state = state;
+
+  const url = oidcClient.authorizationUrl({
+    scope: "openid profile email",
+    redirect_uri: redirectUri,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+    state,
+  });
+  return url;
+}
+
+async function handleCallback(req) {
+  const oidcClient = await initClient();
+  const redirectUri = process.env.KEYCLOAK_REDIRECT_URI || "http://localhost:8080/api/callback";
+  if (!req.session) throw new Error("Session middleware required for callback");
+  const params = oidcClient.callbackParams(req);
+  const codeVerifier = req.session.code_verifier;
+  const state = req.session.state;
+  const tokenSet = await oidcClient.callback(redirectUri, params, { code_verifier: codeVerifier, state });
+
+  // store tokenSet and claims in session
+  req.session.tokenSet = tokenSet;
+  req.session.claims = tokenSet.claims();
+  return tokenSet;
+}
+
+function getLogoutUrl(req) {
+  if (!oidc) return null;
+  const endSession = oidc.issuerObj.metadata.end_session_endpoint;
+  if (!endSession) return null;
+  const postLogout = process.env.KEYCLOAK_POST_LOGOUT_REDIRECT || "http://localhost:8080/";
+  const idToken = req.session && req.session.tokenSet && req.session.tokenSet.id_token;
+  const url = new URL(endSession);
+  if (idToken) url.searchParams.set('id_token_hint', idToken);
+  url.searchParams.set('post_logout_redirect_uri', postLogout);
+  return url.toString();
+}
+
+// Middleware: prefer session token, otherwise Authorization Bearer header
 async function isLoggedIn(req, res, next) {
   try {
+    // If there's a token in session (server-side flow), use its claims
+    if (req.session && req.session.tokenSet) {
+      const claims = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
+      req.body.sessionInfo = {
+        token: req.session.tokenSet.access_token,
+        user_id: claims && claims.sub,
+        username: (claims && (claims.preferred_username || claims.username)),
+        email: claims && claims.email,
+        realm_access: claims && claims.realm_access,
+        resource_access: claims && claims.resource_access,
+        claims,
+      };
+      return next();
+    }
+
+    // otherwise fallback to Authorization header verification
     const authHeader = req.headers.authorization || req.headers.Authorization;
     if (!authHeader) return res.status(401).send({ code: 401, error: "Unauthorized" });
     const match = String(authHeader).match(/Bearer (.+)/i);
@@ -72,6 +159,10 @@ function isAdmin(req, res, next) {
 
 module.exports = {
   initOidc,
+  initClient,
+  getAuthorizationUrl,
+  handleCallback,
+  getLogoutUrl,
   isLoggedIn,
   isAdmin,
 };
