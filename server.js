@@ -43,18 +43,9 @@ app.use(session({
 
 const isLoggedIn = auth.isLoggedIn;
 
-const isAdmin = async (req, res, next) => {
-  // Map Keycloak username to local users table to check admin flag
-  const username = req.body.sessionInfo && req.body.sessionInfo.username;
-  if (!username) return res.status(403).send({ code: 403, error: "Forbidden" });
-
-  const userInfoResp = await users.getUserByUsername(pool, username);
-  const userInfo = userInfoResp.data && userInfoResp.data[0];
-  if (userInfo && userInfo.admin == 1) {
-    return next();
-  }
-  return res.status(403).send({ code: 403, error: "Forbidden" });
-};
+// Use Keycloak roles for admin checks. If you want to rely on local DB admin flag
+// instead, change this to query users.getUserByUsername.
+const isAdmin = auth.isAdmin;
 
 // auth router, anything on this router requires signin
 const authRouter = express.Router();

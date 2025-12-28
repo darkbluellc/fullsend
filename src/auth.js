@@ -73,6 +73,29 @@ async function handleCallback(req) {
   // store tokenSet and claims in session
   req.session.tokenSet = tokenSet;
   req.session.claims = tokenSet.claims();
+
+  // Also verify / decode the access token to capture roles (Keycloak typically puts roles in the access token)
+  try {
+    const oidcCfg = await initOidc();
+    const JWKS = createRemoteJWKSet(new URL(oidcCfg.jwksUri));
+    const verifyOpts = { issuer: oidcCfg.issuerUrl };
+    if (process.env.KEYCLOAK_CLIENT) verifyOpts.audience = process.env.KEYCLOAK_CLIENT;
+    const accessToken = tokenSet.access_token;
+    if (accessToken) {
+      const { payload } = await jwtVerify(accessToken, JWKS, verifyOpts);
+      req.session.accessClaims = payload;
+    }
+  } catch (e) {
+    // Fallback: don't block login if access token verification fails; try to decode without verification
+    try {
+      const { decodeJwt } = require('jose');
+      if (tokenSet && tokenSet.access_token) {
+        req.session.accessClaims = decodeJwt(tokenSet.access_token);
+      }
+    } catch (e2) {
+      console.warn('access token decode failed', e2 && e2.message);
+    }
+  }
   return tokenSet;
 }
 
@@ -93,16 +116,18 @@ async function isLoggedIn(req, res, next) {
   try {
     // If there's a token in session (server-side flow), use its claims
     if (req.session && req.session.tokenSet) {
-      const claims = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
-      req.body.sessionInfo = {
-        token: req.session.tokenSet.access_token,
-        user_id: claims && claims.sub,
-        username: (claims && (claims.preferred_username || claims.username)),
-        email: claims && claims.email,
-        realm_access: claims && claims.realm_access,
-        resource_access: claims && claims.resource_access,
-        claims,
-      };
+        const claims = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
+        const accessClaims = req.session.accessClaims || {};
+        req.body.sessionInfo = {
+          token: req.session.tokenSet.access_token,
+          user_id: claims && claims.sub,
+          username: (claims && (claims.preferred_username || claims.username)),
+          email: claims && claims.email,
+          // prefer realm/resource roles from access token, fall back to id token
+          realm_access: accessClaims.realm_access || claims && claims.realm_access,
+          resource_access: accessClaims.resource_access || claims && claims.resource_access,
+          claims: { id_token: claims, access_token: accessClaims },
+        };
       return next();
     }
 
