@@ -116,18 +116,59 @@ async function isLoggedIn(req, res, next) {
   try {
     // If there's a token in session (server-side flow), use its claims
     if (req.session && req.session.tokenSet) {
-        const claims = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
-        const accessClaims = req.session.accessClaims || {};
-        req.body.sessionInfo = {
-          token: req.session.tokenSet.access_token,
-          user_id: claims && claims.sub,
-          username: (claims && (claims.preferred_username || claims.username)),
-          email: claims && claims.email,
-          // prefer realm/resource roles from access token, fall back to id token
-          realm_access: accessClaims.realm_access || claims && claims.realm_access,
-          resource_access: accessClaims.resource_access || claims && claims.resource_access,
-          claims: { id_token: claims, access_token: accessClaims },
-        };
+      const oidcClient = await initClient();
+      const accessToken = req.session.tokenSet.access_token;
+      let accessClaims = req.session.accessClaims || {};
+
+      // Try introspection if available (requires client credentials), else call userinfo
+      try {
+        if (typeof oidcClient.introspect === 'function') {
+          const introspectResp = await oidcClient.introspect(accessToken);
+          if (!introspectResp || introspectResp.active !== true) {
+            // token inactive -> clear session and reject
+            try { req.session.destroy(() => {}); } catch (e) {}
+            return res.status(401).send({ code: 401, error: 'Unauthorized' });
+          }
+          // introspectResp contains token metadata but not always full role claims; fall back to stored accessClaims when present
+        } else {
+          // Fallback: call userinfo endpoint to verify session is still valid and retrieve claims
+          try {
+            const userinfo = await oidcClient.userinfo(accessToken);
+            if (userinfo) {
+              accessClaims = userinfo;
+            }
+          } catch (e) {
+            // userinfo failed -> treat as logged out
+            try { req.session.destroy(() => {}); } catch (e2) {}
+            return res.status(401).send({ code: 401, error: 'Unauthorized' });
+          }
+        }
+      } catch (e) {
+        // If introspection/userinfo call fails, attempt to rely on stored accessClaims or jwt verification
+        accessClaims = req.session.accessClaims || accessClaims;
+      }
+
+      // normalize sessionInfo to include access token claims (so downstream checks are uniform)
+      const idClaims = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
+      req.body.sessionInfo = {
+        token: accessToken,
+        user_id: idClaims && idClaims.sub,
+        username: (idClaims && (idClaims.preferred_username || idClaims.username)),
+        email: idClaims && idClaims.email,
+        realm_access: accessClaims && accessClaims.realm_access,
+        resource_access: accessClaims && accessClaims.resource_access,
+        // expose the access token claims directly for easier checks
+        claims: accessClaims || {},
+      };
+
+      // Enforce fullsend_access role for all users
+      const requiredRole = process.env.KEYCLOAK_FULLSEND_ROLE || 'fullsend_access';
+      const hasRealm = (req.body.sessionInfo.realm_access && req.body.sessionInfo.realm_access.roles && req.body.sessionInfo.realm_access.roles.includes(requiredRole));
+      const hasResource = req.body.sessionInfo.resource_access && Object.values(req.body.sessionInfo.resource_access).some(r => r && r.roles && r.roles.includes(requiredRole));
+      if (!hasRealm && !hasResource) {
+        return res.status(403).send({ code: 403, error: `Forbidden - missing required role: ${requiredRole}` });
+      }
+
       return next();
     }
 
@@ -147,7 +188,6 @@ async function isLoggedIn(req, res, next) {
     if (process.env.KEYCLOAK_CLIENT) verifyOpts.audience = process.env.KEYCLOAK_CLIENT;
 
     const { payload } = await jwtVerify(token, JWKS, verifyOpts);
-
     req.body.sessionInfo = {
       token,
       user_id: payload.sub,
@@ -157,6 +197,14 @@ async function isLoggedIn(req, res, next) {
       resource_access: payload.resource_access,
       claims: payload,
     };
+
+    // Enforce fullsend_access role for bearer tokens as well
+    const requiredRole = process.env.KEYCLOAK_FULLSEND_ROLE || 'fullsend_access';
+    const hasRealm = (payload.realm_access && payload.realm_access.roles && payload.realm_access.roles.includes(requiredRole));
+    const hasResource = payload.resource_access && Object.values(payload.resource_access).some(r => r && r.roles && r.roles.includes(requiredRole));
+    if (!hasRealm && !hasResource) {
+      return res.status(403).send({ code: 403, error: `Forbidden - missing required role: ${requiredRole}` });
+    }
     return next();
   } catch (e) {
     console.error("isLoggedIn error", e && e.message);
@@ -165,18 +213,28 @@ async function isLoggedIn(req, res, next) {
 }
 
 function isAdmin(req, res, next) {
-  const payload = req.body.sessionInfo && req.body.sessionInfo.claims;
-  if (!payload) return res.status(403).send({ code: 403, error: "Forbidden" });
+  // sessionInfo.claims is normalized to access token claims in isLoggedIn
+  const claims = req.body.sessionInfo && req.body.sessionInfo.claims;
+  if (!claims) return res.status(403).send({ code: 403, error: "Forbidden" });
 
-  const realmRoles = (payload.realm_access && payload.realm_access.roles) || [];
+  const realmRoles = (claims.realm_access && claims.realm_access.roles) || [];
   const clientRoles = [];
-  if (payload.resource_access && process.env.KEYCLOAK_CLIENT) {
-    const ra = payload.resource_access[process.env.KEYCLOAK_CLIENT];
-    if (ra && ra.roles) clientRoles.push(...ra.roles);
+  if (claims.resource_access) {
+    // Try to extract roles from configured client first
+    if (process.env.KEYCLOAK_CLIENT && claims.resource_access[process.env.KEYCLOAK_CLIENT]) {
+      const ra = claims.resource_access[process.env.KEYCLOAK_CLIENT];
+      if (ra && ra.roles) clientRoles.push(...ra.roles);
+    } else {
+      // otherwise flatten all client roles
+      for (const k of Object.keys(claims.resource_access)) {
+        const ra = claims.resource_access[k];
+        if (ra && ra.roles) clientRoles.push(...ra.roles);
+      }
+    }
   }
 
   const roles = [...realmRoles, ...clientRoles];
-  const adminRole = process.env.KEYCLOAK_ADMIN_ROLE || "admin";
+  const adminRole = (req.body.sessionInfo && req.body.sessionInfo.adminRole) || process.env.KEYCLOAK_ADMIN_ROLE || "admin";
   if (roles.includes(adminRole)) return next();
 
   return res.status(403).send({ code: 403, error: "Forbidden" });
