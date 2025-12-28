@@ -177,7 +177,9 @@ authRouter.get("/api/session/info", async (req, res) => {
     } catch (e) {
       console.error('local user lookup failed', e && e.message);
     }
-    res.send({ success: true, data: { sessionInfo, localUser } });
+  // If we have a localUser stored in session (created during callback), prefer that
+  const sessionLocalUser = req.session && req.session.localUser ? req.session.localUser : localUser;
+  res.send({ success: true, data: { sessionInfo, localUser: sessionLocalUser } });
   } else {
     res.status(404).send({ success: false, error: "No session info" });
   }
@@ -196,6 +198,20 @@ app.get('/api/login', async (req, res) => {
 app.get('/api/callback', async (req, res) => {
   try {
     await auth.handleCallback(req);
+    // Ensure a local user exists for the logged in Keycloak user
+    try {
+      const claims = req.session && req.session.claims;
+      if (claims) {
+        const addResp = await users.addUserIfNotExists(pool, claims);
+        if (addResp && addResp.success && addResp.user) {
+          // store local user on session for convenience
+          req.session.localUser = addResp.user;
+        }
+      }
+    } catch (e) {
+      console.error('addUserIfNotExists failed', e && e.message);
+    }
+
     // Redirect to app home or post-login page
     return res.redirect('/fullsend');
   } catch (err) {
