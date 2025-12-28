@@ -11,6 +11,7 @@ const groups = require("./src/groups.js");
 const titles = require("./src/titles.js");
 const users = require("./src/users.js");
 const sessions = require("./src/sessions.js");
+const auth = require("./src/auth.js");
 const messages = require("./src/messages.js");
 
 const { version } = require("./package.json");
@@ -28,34 +29,22 @@ const pool = mariadb.createPool({
 // Initialize express app
 const PORT = process.env.PORT || 8080;
 
-const isLoggedIn = async (req, res, next) => {
-  //"Checking session...
-  if (req.headers.session) {
-    //A session token was passed back, now checking if it is valid...
-    const session = await sessions.getSession(pool, req.headers.session);
-    if (session.data[0]) {
-      req.body.sessionInfo = session.data[0];
-      // Valid session token found
-      sessions.sessionUpdate(pool, req.headers.session);
-      next();
-    } else {
-      //The token passed back is invalid
-      res.status(401).send({ code: 401, error: "Unauthorized" });
-    }
-  } else {
-    // "No session token passed back
-    res.status(401).send({ code: 401, error: "Unauthorized" });
-  }
-};
+// Initialize OIDC discovery (will be awaited before server starts)
+// Note: initOidc is async; we'll call it before starting the server below.
+
+const isLoggedIn = auth.isLoggedIn;
 
 const isAdmin = async (req, res, next) => {
-  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id))
-    .data[0];
-  if (userInfo.admin == 1) {
-    next();
-  } else {
-    res.status(403).send({ code: 403, error: "Forbidden" });
+  // Map Keycloak username to local users table to check admin flag
+  const username = req.body.sessionInfo && req.body.sessionInfo.username;
+  if (!username) return res.status(403).send({ code: 403, error: "Forbidden" });
+
+  const userInfoResp = await users.getUserByUsername(pool, username);
+  const userInfo = userInfoResp.data && userInfoResp.data[0];
+  if (userInfo && userInfo.admin == 1) {
+    return next();
   }
+  return res.status(403).send({ code: 403, error: "Forbidden" });
 };
 
 // auth router, anything on this router requires signin
@@ -164,31 +153,22 @@ authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
   res.send(response_data);
 });
 
-authRouter.get(
-  "/api/session/:session",
-  async ({ params: { session: session } }, res) => {
-    const response_data = await sessions.getSession(pool, session);
-    res.send(response_data);
-  }
-);
-
-app.get("/api/logout", async (req, res) => {
-  const response_data = await sessions.logout(pool, req.headers.session);
-  if (response_data.success) {
-    response_data.data.insertId = response_data.data.insertId;
-    res.send(response_data);
+authRouter.get("/api/session/info", async (req, res) => {
+  if (req.body.sessionInfo) {
+    res.send({ success: true, data: req.body.sessionInfo });
+  } else {
+    res.status(404).send({ success: false, error: "No session info" });
   }
 });
 
-app.post("/api/login", async (req, res) => {
-  const sessionId = await sessions.login(
-    pool,
-    req.body.username,
-    req.body.password
-  );
-  sessionId
-    ? res.send({ session: sessionId })
-    : res.status(403).send({ code: 403, error: "Invalid login" });
+app.get('/api/login', (req, res) => {
+  // Login handled by Keycloak. Frontend should redirect users to Keycloak login.
+  res.send({ info: 'Login handled by Keycloak OIDC' });
+});
+
+app.get('/api/logout', (req, res) => {
+  // Logout handled by Keycloak end-session endpoint; provide info to client
+  res.send({ info: 'Logout via Keycloak end-session endpoint' });
 });
 
 authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {
@@ -221,10 +201,21 @@ authRouter.post(
 );
 
 authRouter.post("/api/messages/send", async (req, res) => {
-  const userId = await sessions.getSession(pool, req.headers.session);
+  // Derive local user id from Keycloak username
+  const username = req.body.sessionInfo && req.body.sessionInfo.username;
+  let userId;
+  if (username) {
+    const userResp = await users.getUserByUsername(pool, username);
+    if (userResp && userResp.data && userResp.data[0]) {
+      userId = userResp.data[0].id;
+    }
+  }
+
+  if (!userId) return res.status(403).send({ code: 403, error: "Forbidden" });
+
   const response_data = await messages.sendMessage(
     pool,
-    userId.data[0].user_id,
+    userId,
     req.body.message,
     req.body.groups,
     req.body.individuals
@@ -232,6 +223,14 @@ authRouter.post("/api/messages/send", async (req, res) => {
   res.send(response_data);
 });
 
-server.listen(PORT, () => {
-  console.log("Fullsend is up!");
-});
+(async () => {
+  try {
+    await auth.initOidc();
+    server.listen(PORT, () => {
+      console.log("Fullsend is up!");
+    });
+  } catch (err) {
+    console.error('Failed to initialize OIDC:', err && err.message);
+    process.exit(1);
+  }
+})();
