@@ -164,7 +164,20 @@ authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
 
 authRouter.get("/api/session/info", async (req, res) => {
   if (req.body.sessionInfo) {
-    res.send({ success: true, data: req.body.sessionInfo });
+    const sessionInfo = req.body.sessionInfo;
+    // Try to map to a local user record for convenience
+    let localUser = null;
+    try {
+      if (sessionInfo.username) {
+        const userResp = await users.getUserByUsername(pool, sessionInfo.username);
+        if (userResp && userResp.data && userResp.data[0]) {
+          localUser = userResp.data[0];
+        }
+      }
+    } catch (e) {
+      console.error('local user lookup failed', e && e.message);
+    }
+    res.send({ success: true, data: { sessionInfo, localUser } });
   } else {
     res.status(404).send({ success: false, error: "No session info" });
   }
