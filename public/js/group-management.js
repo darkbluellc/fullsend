@@ -1,27 +1,10 @@
 let recipientListReady = false;
 let currentGroup;
 
-const getGroups = async () => {
-  const session = getCookie("fullsend_session");
-  return (
-    await (
-      await fetch("/auth/api/groups/insequence", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
-};
+const getGroups = async () => (await (await fetch("/auth/api/groups/insequence")).json()).data;
 
 const loadContacts = async () => {
-  const session = getCookie("fullsend_session");
-
-  const contacts = await (
-    await (
-      await fetch("/auth/api/contacts?active=1", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  const contacts = (await (await fetch("/auth/api/contacts?active=1")).json()).data;
 
   document.getElementById("groupManagementRecipientsLabel").style.display =
     "block";
@@ -38,15 +21,7 @@ const loadContacts = async () => {
 const setGroupContacts = async (groupId) => {
   recipientListReady = false;
 
-  const session = getCookie("fullsend_session");
-
-  const contacts = await (
-    await (
-      await fetch(`/auth/api/group/${groupId}/contacts`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  const contacts = (await (await fetch(`/auth/api/group/${groupId}/contacts`)).json()).data;
 
   const checkboxes = document.getElementsByClassName("recipient-switch");
   for (const checkbox of checkboxes) {
@@ -62,8 +37,7 @@ const setGroupContacts = async (groupId) => {
 };
 
 const handleSwitch = async (e) => {
-  const session = getCookie("fullsend_session");
-
+  
   if (!recipientListReady) return;
   const userId = e.target.value;
   const action = e.target.checked ? "add" : "remove";
@@ -71,7 +45,7 @@ const handleSwitch = async (e) => {
   if (action == "add") {
     const result = await fetch("/auth/api/groups/update/addcontact", {
       method: "POST",
-      headers: { "Content-Type": "application/json", session: session },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contactId: userId,
         groupId: currentGroup,
@@ -81,7 +55,7 @@ const handleSwitch = async (e) => {
   } else if (action == "remove") {
     const result = await fetch("/auth/api/groups/update/removecontact", {
       method: "POST",
-      headers: { "Content-Type": "application/json", session: session },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contactId: userId,
         groupId: currentGroup,

@@ -1,40 +1,19 @@
 //TODO: this doesn't actually need isLoggedIn here, I don't think...
 //Pretty sure the redirect if not logged in (line 73ish) will cover that
 const getGroups = async () => {
-  const session = getCookie("fullsend_session");
-  return (
-    await (
-      await fetch("/auth/api/groups/insequence", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  return (await (await fetch("/auth/api/groups/insequence")).json()).data;
 };
 
 const getContactNumbersInGroup = async (group) => {
-  const session = getCookie("fullsend_session");
   let numbers = [];
-  const contacts = (
-    await (
-      await fetch(`/auth/api/group/${group}/contacts`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  const contacts = (await (await fetch(`/auth/api/group/${group}/contacts`)).json()).data;
   for (const contact of contacts) {
     numbers.push(contact.phone_number);
   }
 };
 
 const getContacts = async () => {
-  const session = getCookie("fullsend_session");
-  const contacts = (
-    await (
-      await fetch("/auth/api/contacts?active=1&filtered=1", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  const contacts = (await (await fetch("/auth/api/contacts?active=1&filtered=1")).json()).data;
   return contacts;
 };
 
@@ -71,7 +50,6 @@ const getSelectedIndividuals = () => {
 
 const handleSwitch = async (e) => {
   handleMessagePreview();
-  const session = getCookie("fullsend_session");
   const switches = document.getElementsByClassName("recipientSwitch");
   const modalBody = document.getElementById("recipientModalBody");
   const viewListButton = document.getElementById("viewRecipientList");
@@ -85,16 +63,7 @@ const handleSwitch = async (e) => {
   }
   
   if (switchList.length > 0) {
-    const contactList = (
-      await (
-        await fetch(
-          `/auth/api/groups/contacts?groups=${switchList.join(",")}`,
-          {
-            headers: { session: session },
-          }
-        )
-      ).json()
-    ).data;
+    const contactList = (await (await fetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`)).json()).data;
     
     if (contactList.length > 0) {
       modalBody.innerHTML = `<table class="table">
@@ -142,14 +111,14 @@ const sendMessage = async () => {
   }
   if (error) return -1;
   
-  const session = getCookie("fullsend_session");
+  
   
   document.getElementById("sendButton").disabled = true;
   document.getElementById("fullsendMessage").disabled = true;
   
   const result = await fetch("/auth/api/messages/send", {
     method: "POST",
-    headers: { "Content-Type": "application/json", session: session },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       message: message,
       groups: selectedGroups,

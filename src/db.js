@@ -1,8 +1,12 @@
 const execQuery = async (pool, q, args = null, db = null) => {
   let conn;
   try {
-    conn = await pool.getConnection();
-    await conn.query(`USE ${db || process.env.PRIMARY_DB_NAME};`);
+  conn = await pool.getConnection();
+  const dbName = db || process.env.PRIMARY_DB_NAME;
+  // Wrap database name in backticks to allow hyphens and other chars.
+  // Also escape any backticks that might be present in the name.
+  const safeDbName = dbName ? `\`${String(dbName).replace(/`/g, '``')}\`` : null;
+  if (safeDbName) await conn.query(`USE ${safeDbName};`);
     const results = await (args != null ? conn.query(q, args) : conn.query(q));
     const response = { success: true };
     if (results) {
