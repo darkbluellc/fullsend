@@ -1,20 +1,36 @@
 //TODO: this doesn't actually need isLoggedIn here, I don't think...
 //Pretty sure the redirect if not logged in (line 73ish) will cover that
+const safeJsonFetch = async (url, options = {}) => {
+  try {
+    const resp = await fetch(url, options);
+    if (!resp.ok) {
+      console.error('Fetch failed', url, resp.status, resp.statusText);
+      return null;
+    }
+    return await resp.json();
+  } catch (e) {
+    console.error('Network error fetching', url, e && e.message);
+    return null;
+  }
+};
+
 const getGroups = async () => {
-  return (await (await fetch("/auth/api/groups/insequence")).json()).data;
+  const resp = await safeJsonFetch("/auth/api/groups/insequence");
+  return resp ? resp.data : [];
 };
 
 const getContactNumbersInGroup = async (group) => {
   let numbers = [];
-  const contacts = (await (await fetch(`/auth/api/group/${group}/contacts`)).json()).data;
+  const resp = await safeJsonFetch(`/auth/api/group/${group}/contacts`);
+  const contacts = resp ? resp.data : [];
   for (const contact of contacts) {
     numbers.push(contact.phone_number);
   }
 };
 
 const getContacts = async () => {
-  const contacts = (await (await fetch("/auth/api/contacts?active=1&filtered=1")).json()).data;
-  return contacts;
+  const resp = await safeJsonFetch("/auth/api/contacts?active=1&filtered=1");
+  return resp ? resp.data : [];
 };
 
 const getSelectedGroups = (categories = false) => {

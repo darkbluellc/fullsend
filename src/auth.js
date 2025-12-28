@@ -96,6 +96,25 @@ async function handleCallback(req) {
       console.warn('access token decode failed', e2 && e2.message);
     }
   }
+  // If we still don't have role information, try userinfo (useful if access token is opaque)
+  try {
+    if (!req.session.accessClaims || (!req.session.accessClaims.realm_access && !req.session.accessClaims.resource_access)) {
+      if (tokenSet && tokenSet.access_token) {
+        try {
+          const oidcClient = await initClient();
+          const ui = await oidcClient.userinfo(tokenSet.access_token);
+          if (ui) {
+            req.session.accessClaims = ui;
+          }
+        } catch (uiErr) {
+          // userinfo may not be available; don't block login
+          console.warn('userinfo fetch failed', uiErr && uiErr.message);
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
   return tokenSet;
 }
 
@@ -118,34 +137,41 @@ async function isLoggedIn(req, res, next) {
     if (req.session && req.session.tokenSet) {
       const oidcClient = await initClient();
       const accessToken = req.session.tokenSet.access_token;
+      // Prefer the already-decoded accessClaims stored at login
       let accessClaims = req.session.accessClaims || {};
 
-      // Try introspection if available (requires client credentials), else call userinfo
+      // Try to verify the access token via JWKS (fast, no client secret required)
       try {
-        if (typeof oidcClient.introspect === 'function') {
-          const introspectResp = await oidcClient.introspect(accessToken);
-          if (!introspectResp || introspectResp.active !== true) {
-            // token inactive -> clear session and reject
-            try { req.session.destroy(() => {}); } catch (e) {}
-            return res.status(401).send({ code: 401, error: 'Unauthorized' });
-          }
-          // introspectResp contains token metadata but not always full role claims; fall back to stored accessClaims when present
-        } else {
-          // Fallback: call userinfo endpoint to verify session is still valid and retrieve claims
-          try {
-            const userinfo = await oidcClient.userinfo(accessToken);
-            if (userinfo) {
-              accessClaims = userinfo;
-            }
-          } catch (e) {
-            // userinfo failed -> treat as logged out
-            try { req.session.destroy(() => {}); } catch (e2) {}
-            return res.status(401).send({ code: 401, error: 'Unauthorized' });
-          }
+        const oidcCfg = await initOidc();
+        const JWKS = createRemoteJWKSet(new URL(oidcCfg.jwksUri));
+        const verifyOpts = { issuer: oidcCfg.issuerUrl };
+        if (process.env.KEYCLOAK_CLIENT) verifyOpts.audience = process.env.KEYCLOAK_CLIENT;
+        if (accessToken) {
+          const { payload } = await jwtVerify(accessToken, JWKS, verifyOpts);
+          accessClaims = payload || accessClaims;
         }
       } catch (e) {
-        // If introspection/userinfo call fails, attempt to rely on stored accessClaims or jwt verification
-        accessClaims = req.session.accessClaims || accessClaims;
+        // If jwt verification fails, don't immediately destroy session.
+        // If introspection is available (and client secret configured), use it to check active status.
+        try {
+          if (process.env.KEYCLOAK_CLIENT_SECRET && typeof oidcClient.introspect === 'function') {
+            const introspectResp = await oidcClient.introspect(accessToken);
+            if (!introspectResp || introspectResp.active !== true) {
+              try { req.session.destroy(() => {}); } catch (e2) {}
+              return res.status(401).send({ code: 401, error: 'Unauthorized' });
+            }
+          } else {
+            // As a last resort, try userinfo but do not destroy session if it fails; fall back to stored claims
+            try {
+              const userinfo = await oidcClient.userinfo(accessToken);
+              if (userinfo) accessClaims = userinfo;
+            } catch (e2) {
+              // ignore; we'll use whatever we have in session
+            }
+          }
+        } catch (e2) {
+          // ignore and continue with stored claims
+        }
       }
 
       // normalize sessionInfo to include access token claims (so downstream checks are uniform)
