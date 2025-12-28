@@ -220,6 +220,29 @@ app.get('/api/callback', async (req, res) => {
       console.error('addUserIfNotExists failed', e && e.message);
     }
 
+    // After login, ensure the user has the required Fullsend role. If not,
+    // redirect to a friendly page explaining lack of access.
+    try {
+      const requiredRole = process.env.KEYCLOAK_FULLSEND_ROLE || 'fullsend_access';
+      const accessClaims = req.session && req.session.accessClaims ? req.session.accessClaims : (req.session && req.session.claims ? req.session.claims : null);
+      let hasRole = false;
+      if (accessClaims) {
+        const realmRoles = (accessClaims.realm_access && accessClaims.realm_access.roles) || [];
+        if (realmRoles.includes(requiredRole)) hasRole = true;
+        if (!hasRole && accessClaims.resource_access) {
+          for (const k of Object.keys(accessClaims.resource_access)) {
+            const ra = accessClaims.resource_access[k];
+            if (ra && ra.roles && ra.roles.includes(requiredRole)) { hasRole = true; break; }
+          }
+        }
+      }
+      if (!hasRole) {
+        return res.redirect('/no-access');
+      }
+    } catch (e) {
+      console.error('post-login role check failed', e && e.message);
+    }
+
     // Redirect to app home or post-login page
     return res.redirect('/fullsend');
   } catch (err) {
