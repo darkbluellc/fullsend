@@ -1,41 +1,35 @@
-//TODO: this doesn't actually need isLoggedIn here, I don't think...
-//Pretty sure the redirect if not logged in (line 73ish) will cover that
-const getGroups = async () => {
-  const session = getCookie("fullsend_session");
-  return (
-    await (
-      await fetch("/auth/api/groups/insequence", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
-};
-
-const getContactNumbersInGroup = async (group) => {
-  const session = getCookie("fullsend_session");
-  let numbers = [];
-  const contacts = (
-    await (
-      await fetch(`/auth/api/group/${group}/contacts`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
-  for (const contact of contacts) {
-    numbers.push(contact.phone_number);
+const safeJsonFetch = async (url, options = {}) => {
+  try {
+    const resp = await fetch(url, options);
+    if (!resp.ok) {
+      console.error('Fetch failed', url, resp.status, resp.statusText);
+      return null;
+    }
+    return await resp.json();
+  } catch (e) {
+    console.error('Network error fetching', url, e && e.message);
+    return null;
   }
 };
 
+const getGroups = async () => {
+  const resp = await safeJsonFetch("/auth/api/groups/insequence");
+  return resp ? resp.data : [];
+};
+
+const getContactNumbersInGroup = async (group) => {
+  let numbers = [];
+  const resp = await safeJsonFetch(`/auth/api/group/${group}/contacts`);
+  const contacts = resp ? resp.data : [];
+  for (const contact of contacts) {
+    numbers.push(contact.phone_number);
+  }
+  return numbers;
+};
+
 const getContacts = async () => {
-  const session = getCookie("fullsend_session");
-  const contacts = (
-    await (
-      await fetch("/auth/api/contacts?active=1&filtered=1", {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
-  return contacts;
+  const resp = await safeJsonFetch("/auth/api/contacts?active=1&filtered=1");
+  return resp ? resp.data : [];
 };
 
 const getSelectedGroups = (categories = false) => {
@@ -71,7 +65,6 @@ const getSelectedIndividuals = () => {
 
 const handleSwitch = async (e) => {
   handleMessagePreview();
-  const session = getCookie("fullsend_session");
   const switches = document.getElementsByClassName("recipientSwitch");
   const modalBody = document.getElementById("recipientModalBody");
   const viewListButton = document.getElementById("viewRecipientList");
@@ -85,16 +78,8 @@ const handleSwitch = async (e) => {
   }
   
   if (switchList.length > 0) {
-    const contactList = (
-      await (
-        await fetch(
-          `/auth/api/groups/contacts?groups=${switchList.join(",")}`,
-          {
-            headers: { session: session },
-          }
-        )
-      ).json()
-    ).data;
+    const contactResp = await safeJsonFetch(`/auth/api/groups/contacts?groups=${switchList.join(",")}`);
+    const contactList = contactResp ? contactResp.data : [];
     
     if (contactList.length > 0) {
       modalBody.innerHTML = `<table class="table">
@@ -142,14 +127,14 @@ const sendMessage = async () => {
   }
   if (error) return -1;
   
-  const session = getCookie("fullsend_session");
+  
   
   document.getElementById("sendButton").disabled = true;
   document.getElementById("fullsendMessage").disabled = true;
   
   const result = await fetch("/auth/api/messages/send", {
     method: "POST",
-    headers: { "Content-Type": "application/json", session: session },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       message: message,
       groups: selectedGroups,

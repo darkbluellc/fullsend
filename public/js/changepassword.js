@@ -1,12 +1,5 @@
 const loadUsers = async () => {
-  const session = getCookie("fullsend_session");
-  const users = (
-    await (
-      await fetch(`/auth/api/users`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data;
+  const users = (await (await fetch(`/auth/api/users`)).json()).data;
   for (const user of users) {
     document.getElementById(
       "changePasswordUsername"
@@ -40,11 +33,9 @@ const changePassword = async () => {
   }
   if (error) return -1;
 
-  const session = getCookie("fullsend_session");
-
   const result = await fetch("/auth/api/users/update/password", {
     method: "POST",
-    headers: { "Content-Type": "application/json", session: session },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       userId: userId,
       password: password,

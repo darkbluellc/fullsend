@@ -1,18 +1,4 @@
-const getCookie = (cname) => {
-  let name = cname + "=";
-  let decodedCookie = decodeURIComponent(document.cookie);
-  let ca = decodedCookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) == " ") {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return undefined;
-};
+// cookie helper removed — server now manages sessions via OIDC
 
 const getVersion = async () => {
   const version = (await fetch("/api/version")).text();
@@ -24,64 +10,45 @@ const printVersionInNav = async () => {
 };
 
 const checkLogin = async () => {
-  const session = getCookie("fullsend_session");
-  const login = (
-    await fetch("/auth/api/session/" + session, {
-      headers: { session: session },
-    })
-  ).json();
-  if ((await login).code == 401) {
-    logout();
-  }
-  return login;
+  // Ask the server for session info (server reads token from session or Authorization)
+  const resp = await fetch('/auth/api/session/info');
+  if (resp.status === 200) return resp.json();
+  return { success: false };
 };
 
 const isLoggedIn = async () => {
-  const session = getCookie("fullsend_session");
-  if (!session) return false;
-  const login = (
-    await fetch("/auth/api/session/" + session, {
-      headers: { session: session },
-    })
-  ).json();
-  if ((await login).code == 401) {
-    return false;
-  }
-
-  const days = 5;
-  const expires = new Date(Date.now() + days * 86400 * 1000).toUTCString();
-
-  document.cookie = `fullsend_session=${session}; expires=${expires}`;
-
-  return true;
+  const info = await checkLogin();
+  return info && info.success;
 };
 
 const isAdmin = async (userId = null) => {
-  const session = getCookie("fullsend_session");
-  if (!session) return;
-
-  if (!userId) {
-    userId = (await checkLogin()).data[0].user_id;
+  const info = await checkLogin();
+  if (!info || !info.success) return false;
+  // If server returned localUser, respect that flag; otherwise inspect claims
+  if (info.data && info.data.localUser && info.data.localUser.admin) return true;
+  const claims = info.data && info.data.sessionInfo && info.data.sessionInfo.claims;
+  if (!claims) return false;
+  const realmRoles = (claims.realm_access && claims.realm_access.roles) || [];
+  // Server should expose which role name represents admin; fall back to 'admin'
+  const adminRole = (info.data && info.data.sessionInfo && info.data.sessionInfo.adminRole) || 'admin';
+  if (realmRoles.includes(adminRole)) return true;
+  if (claims.resource_access) {
+    // Try to find admin role in any client resource_access entry
+    for (const clientKey of Object.keys(claims.resource_access)) {
+      const ra = claims.resource_access[clientKey];
+      if (ra && ra.roles && ra.roles.includes(adminRole)) return true;
+    }
   }
-  const userInfo = (
-    await (
-      await fetch(`/auth/api/user/${userId}`, {
-        headers: { session: session },
-      })
-    ).json()
-  ).data[0];
-  return userInfo.admin;
+  return false;
 };
 
 const logout = async () => {
-  const session = getCookie("fullsend_session");
   try {
-    await fetch("/api/logout", { headers: { session } });
+    window.location.href = '/api/logout';
   } catch (e) {
-    console.error("Logout request failed:", e);
+    console.error('Logout failed', e);
+    window.location.href = '/';
   }
-  document.cookie = "fullsend_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  window.location.href = "/";
 };
 
 const checkForRedirect = async () => {
@@ -101,7 +68,6 @@ const checkForRedirect = async () => {
 
   for (const page of [authPages, adminPages]) {
     if (window.location.pathname == page && !isLoggedInVar) {
-      logout();
       window.location.href = "/";
       return;
     }

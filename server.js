@@ -11,7 +11,9 @@ const groups = require("./src/groups.js");
 const titles = require("./src/titles.js");
 const users = require("./src/users.js");
 const sessions = require("./src/sessions.js");
+const auth = require("./src/auth.js");
 const messages = require("./src/messages.js");
+const session = require('express-session');
 
 const { version } = require("./package.json");
 const { response } = require("express");
@@ -28,35 +30,22 @@ const pool = mariadb.createPool({
 // Initialize express app
 const PORT = process.env.PORT || 8080;
 
-const isLoggedIn = async (req, res, next) => {
-  //"Checking session...
-  if (req.headers.session) {
-    //A session token was passed back, now checking if it is valid...
-    const session = await sessions.getSession(pool, req.headers.session);
-    if (session.data[0]) {
-      req.body.sessionInfo = session.data[0];
-      // Valid session token found
-      sessions.sessionUpdate(pool, req.headers.session);
-      next();
-    } else {
-      //The token passed back is invalid
-      res.status(401).send({ code: 401, error: "Unauthorized" });
-    }
-  } else {
-    // "No session token passed back
-    res.status(401).send({ code: 401, error: "Unauthorized" });
-  }
-};
+// Session middleware (required for server-side login flow)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'a very long secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }, // set secure: true if using HTTPS
+}));
 
-const isAdmin = async (req, res, next) => {
-  const userInfo = (await users.getUser(pool, req.body.sessionInfo.user_id))
-    .data[0];
-  if (userInfo.admin == 1) {
-    next();
-  } else {
-    res.status(403).send({ code: 403, error: "Forbidden" });
-  }
-};
+// Initialize OIDC discovery (will be awaited before server starts)
+// Note: initOidc is async; we'll call it before starting the server below.
+
+const isLoggedIn = auth.isLoggedIn;
+
+// Use Keycloak roles for admin checks. If you want to rely on local DB admin flag
+// instead, change this to query users.getUserByUsername.
+const isAdmin = auth.isAdmin;
 
 // auth router, anything on this router requires signin
 const authRouter = express.Router();
@@ -100,6 +89,11 @@ app.get("/changepassword", (req, res) => {
 app.get("/group-management", (req, res) => {
   res.sendFile(path.join(__dirname, "public/group-management.html"));
 });
+
+app.get("/no-access", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/no-access.html"));
+});
+
 
 app.get("/api", async (req, res) => {
   res.send(`fullsend server is online<br>v${version}`);
@@ -164,31 +158,117 @@ authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
   res.send(response_data);
 });
 
-authRouter.get(
-  "/api/session/:session",
-  async ({ params: { session: session } }, res) => {
-    const response_data = await sessions.getSession(pool, session);
-    res.send(response_data);
-  }
-);
-
-app.get("/api/logout", async (req, res) => {
-  const response_data = await sessions.logout(pool, req.headers.session);
-  if (response_data.success) {
-    response_data.data.insertId = response_data.data.insertId;
-    res.send(response_data);
+authRouter.get("/api/session/info", async (req, res) => {
+  if (req.body.sessionInfo) {
+    const sessionInfo = req.body.sessionInfo;
+    // Expose the configured admin role name to the client so browser-side checks
+    // don't need to rely on Node-only process.env variables.
+    sessionInfo.adminRole = process.env.KEYCLOAK_ADMIN_ROLE || 'admin';
+    // Try to map to a local user record for convenience
+    let localUser = null;
+    try {
+      if (sessionInfo.username) {
+        const userResp = await users.getUserByUsername(pool, sessionInfo.username);
+        if (userResp && userResp.data && userResp.data[0]) {
+          localUser = userResp.data[0];
+        }
+      }
+    } catch (e) {
+      console.error('local user lookup failed', e && e.message);
+    }
+  // If we have a localUser stored in session (created during callback), prefer that
+  const sessionLocalUser = req.session && req.session.localUser ? req.session.localUser : localUser;
+  res.send({ success: true, data: { sessionInfo, localUser: sessionLocalUser } });
+  } else {
+    res.status(404).send({ success: false, error: "No session info" });
   }
 });
 
-app.post("/api/login", async (req, res) => {
-  const sessionId = await sessions.login(
-    pool,
-    req.body.username,
-    req.body.password
-  );
-  sessionId
-    ? res.send({ session: sessionId })
-    : res.status(403).send({ code: 403, error: "Invalid login" });
+app.get('/api/login', async (req, res) => {
+  try {
+    const url = await auth.getAuthorizationUrl(req);
+    return res.redirect(url);
+  } catch (err) {
+    console.error('login redirect failed', err && err.message);
+    return res.status(500).send({ error: 'Login redirect failed' });
+  }
+});
+
+// Debug endpoint (no role enforcement) to inspect session info during development
+app.get('/api/debug/session', async (req, res) => {
+  try {
+    if (req.session && req.session.tokenSet) {
+      const sessionInfo = req.session.claims || (req.session.tokenSet.claims && req.session.tokenSet.claims());
+      return res.send({ success: true, data: { sessionInfo, localUser: req.session.localUser || null } });
+    }
+    return res.status(404).send({ success: false, error: 'No session' });
+  } catch (e) {
+    console.error('debug session failed', e && e.message);
+    return res.status(500).send({ success: false, error: 'Server error' });
+  }
+});
+
+app.get('/api/callback', async (req, res) => {
+  try {
+    await auth.handleCallback(req);
+    // Ensure a local user exists for the logged in Keycloak user
+    try {
+      const claims = req.session && req.session.claims;
+      if (claims) {
+        const addResp = await users.addUserIfNotExists(pool, claims);
+        if (addResp && addResp.success && addResp.user) {
+          // store local user on session for convenience
+          req.session.localUser = addResp.user;
+        }
+      }
+    } catch (e) {
+      console.error('addUserIfNotExists failed', e && e.message);
+    }
+
+    // After login, ensure the user has the required Fullsend role. If not,
+    // redirect to a friendly page explaining lack of access.
+    try {
+      const requiredRole = process.env.KEYCLOAK_FULLSEND_ROLE || 'fullsend_access';
+      const accessClaims = req.session && req.session.accessClaims ? req.session.accessClaims : (req.session && req.session.claims ? req.session.claims : null);
+      let hasRole = false;
+      if (accessClaims) {
+        const realmRoles = (accessClaims.realm_access && accessClaims.realm_access.roles) || [];
+        if (realmRoles.includes(requiredRole)) hasRole = true;
+        if (!hasRole && accessClaims.resource_access) {
+          for (const k of Object.keys(accessClaims.resource_access)) {
+            const ra = accessClaims.resource_access[k];
+            if (ra && ra.roles && ra.roles.includes(requiredRole)) { hasRole = true; break; }
+          }
+        }
+      }
+      if (!hasRole) {
+        return res.redirect('/no-access');
+      }
+    } catch (e) {
+      console.error('post-login role check failed', e && e.message);
+    }
+
+    // Redirect to app home or post-login page
+    return res.redirect('/fullsend');
+  } catch (err) {
+    console.error('callback handling failed', err && err.message);
+    return res.status(500).send({ error: 'Callback processing failed' });
+  }
+});
+
+app.get('/api/logout', (req, res) => {
+  try {
+    const logoutUrl = auth.getLogoutUrl(req);
+    // destroy local session
+    if (req.session) {
+      req.session.destroy(() => {});
+    }
+    if (logoutUrl) return res.redirect(logoutUrl);
+    return res.redirect('/');
+  } catch (err) {
+    console.error('logout failed', err && err.message);
+    return res.status(500).send({ error: 'Logout failed' });
+  }
 });
 
 authRouter.post("/api/users/update/password", isAdmin, async (req, res) => {
@@ -221,10 +301,21 @@ authRouter.post(
 );
 
 authRouter.post("/api/messages/send", async (req, res) => {
-  const userId = await sessions.getSession(pool, req.headers.session);
+  // Derive local user id from Keycloak username
+  const username = req.body.sessionInfo && req.body.sessionInfo.username;
+  let userId;
+  if (username) {
+    const userResp = await users.getUserByUsername(pool, username);
+    if (userResp && userResp.data && userResp.data[0]) {
+      userId = userResp.data[0].id;
+    }
+  }
+
+  if (!userId) return res.status(403).send({ code: 403, error: "Forbidden" });
+
   const response_data = await messages.sendMessage(
     pool,
-    userId.data[0].user_id,
+    userId,
     req.body.message,
     req.body.groups,
     req.body.individuals
@@ -232,6 +323,14 @@ authRouter.post("/api/messages/send", async (req, res) => {
   res.send(response_data);
 });
 
-server.listen(PORT, () => {
-  console.log("Fullsend is up!");
-});
+(async () => {
+  try {
+    await auth.initOidc();
+    server.listen(PORT, () => {
+      console.log("Fullsend is up!");
+    });
+  } catch (err) {
+    console.error('Failed to initialize OIDC:', err && err.message);
+    process.exit(1);
+  }
+})();
