@@ -170,7 +170,7 @@ const handleMessagePreview = () => {
 const pageOnLoadFunctions = async () => {
   const groups = await getGroups();
   const recipientSwitch = document.getElementById("recipientSwitch");
-
+  
   for (const group of groups) {
     document.getElementById(
       "fullsendGroupRecipients"
