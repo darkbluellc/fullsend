@@ -203,6 +203,19 @@ app.get('/api/login', async (req, res) => {
   }
 });
 
+// Public config endpoint for client-side behavior toggles (DEV mode, sending enabled)
+app.get('/api/config', (req, res) => {
+  try {
+    const dev = String(process.env.DEV || '').toLowerCase() === 'true';
+    // If DEV is true, force sending disabled
+    const sendingEnabled = dev ? false : (String(process.env.SENDING_ENABLED || '').toLowerCase() === 'true');
+    res.send({ success: true, data: { dev, sendingEnabled } });
+  } catch (e) {
+    console.error('config endpoint failed', e && e.message);
+    res.status(500).send({ success: false });
+  }
+});
+
 // Debug endpoint (no role enforcement) to inspect session info during development
 app.get('/api/debug/session', async (req, res) => {
   try {
