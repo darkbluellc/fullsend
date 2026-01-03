@@ -31,11 +31,20 @@ const pool = mariadb.createPool({
 const PORT = process.env.PORT || 8080;
 
 // Session middleware (required for server-side login flow)
+// Configure cookie maxAge from env (seconds) and enable rolling so the cookie
+// expiration is refreshed on each response. Defaults to 7 days.
+const sessionMaxAgeSeconds = parseInt(process.env.SESSION_MAX_AGE || '604800', 10); // 7 days
 app.use(session({
   secret: process.env.SESSION_SECRET || 'a very long secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }, // set secure: true if using HTTPS
+  rolling: true, // refresh cookie expiration on every response
+  cookie: {
+    secure: (process.env.NODE_ENV === 'production'), // set to true in prod when using HTTPS
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: sessionMaxAgeSeconds * 1000,
+  },
 }));
 
 // Initialize OIDC discovery (will be awaited before server starts)
