@@ -5,6 +5,17 @@ const getVersion = async () => {
   return version;
 };
 
+const getConfig = async () => {
+  try {
+    const resp = await fetch('/api/config');
+    if (!resp.ok) return { success: false };
+    return resp.json();
+  } catch (e) {
+    console.error('Failed to load config', e && e.message);
+    return { success: false };
+  }
+};
+
 const printVersionInNav = async () => {
   document.getElementById("navVersion").text = await getVersion();
 };
@@ -85,8 +96,23 @@ checkForRedirect();
 
 window.onload = async () => {
   printVersionInNav();
+
+  // load runtime config (DEV mode and sending enabled)
+  const cfg = await getConfig();
+  if (cfg && cfg.success && cfg.data) {
+    window.APP_CONFIG = cfg.data;
+    if (cfg.data.dev) {
+      const nd = document.getElementById('navDev');
+      if (nd) nd.style.display = 'block';
+    }
+    // If sending is disabled, disable send button to prevent user attempts
+    if (!cfg.data.sendingEnabled) {
+      const sendBtn = document.getElementById('sendButton');
+      if (sendBtn) sendBtn.disabled = true;
+    }
+  }
+
   pageOnLoadFunctions();
 
-  if (await isAdmin())
-    document.getElementById("adminNavLink").style.display = "block";
+  if (await isAdmin()) document.getElementById("adminNavLink").style.display = "block";
 };

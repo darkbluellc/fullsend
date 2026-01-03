@@ -108,6 +108,11 @@ const handleSwitch = async (e) => {
 };
 
 const sendMessage = async () => {
+  // Respect server-side sending flag exposed via APP_CONFIG
+  if (window.APP_CONFIG && window.APP_CONFIG.sendingEnabled === false) {
+    alert('Sending is disabled in this environment.');
+    return -1;
+  }
   let error = false;
   document.getElementById("noMessageError").style.display = "none";
   document.getElementById("noRecipientsError").style.display = "none";
@@ -156,11 +161,15 @@ const sendMessage = async () => {
 const handleMessagePreview = () => {
   const fsmText = document.getElementById("fullsendMessage").value.trim();
   
-  if (fsmText != "") {
-    document.getElementById("sendButton").disabled = false;
-  }
-  else {
+  // If sending is disabled by config, keep send button disabled
+  if (window.APP_CONFIG && window.APP_CONFIG.sendingEnabled === false) {
     document.getElementById("sendButton").disabled = true;
+  } else {
+    if (fsmText != "") {
+      document.getElementById("sendButton").disabled = false;
+    } else {
+      document.getElementById("sendButton").disabled = true;
+    }
   }
   
   const selectedCategories = getSelectedGroupsCategories();
