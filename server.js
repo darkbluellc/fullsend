@@ -168,8 +168,11 @@ authRouter.get("/api/user/:user", async ({ params: { user: user } }, res) => {
 });
 
 authRouter.get("/api/session/info", async (req, res) => {
-  if (req.body.sessionInfo) {
-    const sessionInfo = req.body.sessionInfo;
+  // Prefer server-side session data (populated by express-session via the
+  // connect.sid cookie). GET requests generally don't have a body, so rely
+  // on `req.session` rather than `req.body`.
+  const sessionInfo = req.session && (req.session.claims || (req.session.tokenSet && req.session.tokenSet.claims && req.session.tokenSet.claims()));
+  if (sessionInfo) {
     // Expose the configured admin role name to the client so browser-side checks
     // don't need to rely on Node-only process.env variables.
     sessionInfo.adminRole = process.env.KEYCLOAK_ADMIN_ROLE || 'admin';
@@ -185,9 +188,9 @@ authRouter.get("/api/session/info", async (req, res) => {
     } catch (e) {
       console.error('local user lookup failed', e && e.message);
     }
-  // If we have a localUser stored in session (created during callback), prefer that
-  const sessionLocalUser = req.session && req.session.localUser ? req.session.localUser : localUser;
-  res.send({ success: true, data: { sessionInfo, localUser: sessionLocalUser } });
+    // If we have a localUser stored in session (created during callback), prefer that
+    const sessionLocalUser = req.session && req.session.localUser ? req.session.localUser : localUser;
+    res.send({ success: true, data: { sessionInfo, localUser: sessionLocalUser } });
   } else {
     res.status(404).send({ success: false, error: "No session info" });
   }
