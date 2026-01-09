@@ -121,7 +121,10 @@ async function isLoggedIn(req, res, next) {
       // Prefer the already-decoded accessClaims stored at login
       let accessClaims = req.session.accessClaims || {};
 
-      // Try to verify the access token via JWKS (fast, no client secret required)
+      // Try to verify the access token via JWKS (fast, no client secret required).
+      // If verification fails (commonly because the access token expired), attempt
+      // to refresh using the stored refresh_token. Only destroy the session if
+      // refresh fails or introspection explicitly reports inactive.
       try {
         const oidcCfg = await initOidc();
         const JWKS = createRemoteJWKSet(new URL(oidcCfg.jwksUri));
@@ -132,26 +135,60 @@ async function isLoggedIn(req, res, next) {
           accessClaims = payload || accessClaims;
         }
       } catch (e) {
-        // If jwt verification fails, don't immediately destroy session.
-        // If introspection is available (and client secret configured), use it to check active status.
+        // Verification failed; try to refresh the token if we have a refresh_token
         try {
-          if (process.env.KEYCLOAK_CLIENT_SECRET && typeof oidcClient.introspect === 'function') {
-            const introspectResp = await oidcClient.introspect(accessToken);
-            if (!introspectResp || introspectResp.active !== true) {
-              try { req.session.destroy(() => {}); } catch (e2) {}
-              return res.status(401).send({ code: 401, error: 'Unauthorized' });
+          const tokenSet = req.session && req.session.tokenSet;
+          if (tokenSet && tokenSet.refresh_token && typeof oidcClient.refresh === 'function') {
+            // Attempt to refresh
+            const newTokenSet = await oidcClient.refresh(tokenSet.refresh_token);
+            // Persist refreshed tokens in session
+            req.session.tokenSet = newTokenSet;
+            try { req.session.claims = newTokenSet.claims(); } catch (e2) {}
+
+            // Try to verify the new access token and set accessClaims
+            try {
+              const oidcCfg2 = await initOidc();
+              const JWKS2 = createRemoteJWKSet(new URL(oidcCfg2.jwksUri));
+              const verifyOpts2 = { issuer: oidcCfg2.issuerUrl };
+              if (process.env.KEYCLOAK_CLIENT) verifyOpts2.audience = process.env.KEYCLOAK_CLIENT;
+              if (newTokenSet && newTokenSet.access_token) {
+                const { payload } = await jwtVerify(newTokenSet.access_token, JWKS2, verifyOpts2);
+                accessClaims = payload || accessClaims;
+                req.session.accessClaims = accessClaims;
+              }
+            } catch (e3) {
+              // Fallback: decode without verification
+              try {
+                const { decodeJwt } = require('jose');
+                if (req.session && req.session.tokenSet && req.session.tokenSet.access_token) {
+                  req.session.accessClaims = decodeJwt(req.session.tokenSet.access_token);
+                  accessClaims = req.session.accessClaims;
+                }
+              } catch (e4) {
+                // ignore
+              }
             }
           } else {
-            // As a last resort, try userinfo but do not destroy session if it fails; fall back to stored claims
-            try {
-              const userinfo = await oidcClient.userinfo(accessToken);
-              if (userinfo) accessClaims = userinfo;
-            } catch (e2) {
-              // ignore; we'll use whatever we have in session
+            // No refresh available; fallback to introspection if possible or userinfo
+            if (process.env.KEYCLOAK_CLIENT_SECRET && typeof oidcClient.introspect === 'function') {
+              const introspectResp = await oidcClient.introspect(accessToken);
+              if (!introspectResp || introspectResp.active !== true) {
+                try { req.session.destroy(() => {}); } catch (e2) {}
+                return res.status(401).send({ code: 401, error: 'Unauthorized' });
+              }
+            } else {
+              try {
+                const userinfo = await oidcClient.userinfo(accessToken);
+                if (userinfo) accessClaims = userinfo;
+              } catch (e2) {
+                // ignore; we'll use whatever we have in session
+              }
             }
           }
-        } catch (e2) {
-          // ignore and continue with stored claims
+        } catch (refreshErr) {
+          console.error('token refresh failed', refreshErr && refreshErr.message);
+          try { req.session.destroy(() => {}); } catch (e2) {}
+          return res.status(401).send({ code: 401, error: 'Unauthorized' });
         }
       }
 
