@@ -1,6 +1,6 @@
 {
   "name": "fullsend",
-  "version": "1.8.6",
+  "version": "1.8.7",
   "description": "Fullsend allows allowed users to send bulk text messages to groups of recipients",
   "main": "server.js",
   "scripts": {
@@ -25,7 +25,6 @@
     "jose": "^4.15.0",
     "mariadb": "^3.0.0",
     "nodemon": "^3.1.10",
-    "npm": "^11.14.0",
     "openid-client": "^5.2.0",
     "path": "^0.12.7",
     "twilio": "^5.10.3"
