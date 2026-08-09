@@ -28,7 +28,29 @@ exports.sendMessage = async (pool, userId, text, groups, individuals) => {
   if (!messageAdded?.data?.insertId) {
     return;
   }
+  // Track contacts already recorded so a sender who is also selected as an
+  // individual isn't inserted into messages_contacts twice.
+  const loggedContacts = new Set();
+
   for (const group of groups) {
+    // The dynamic "enabled senders" group has no `groups` row, so it can't be
+    // recorded in messages_groups (FK). Resolve its members and record each in
+    // messages_contacts instead, like individually selected recipients.
+    if (String(group) === groupsApi.SENDERS_GROUP_ID) {
+      const sendersResponse = await groupsApi.getEnabledSenders(pool);
+      for (const sender of sendersResponse.data || []) {
+        numbers.add(sender.phone_number);
+        if (!loggedContacts.has(sender.id)) {
+          loggedContacts.add(sender.id);
+          await execQuery(pool, MESSAGE_CONTACT_ADD, [
+            messageAdded.data.insertId,
+            sender.id,
+          ]);
+        }
+      }
+      continue;
+    }
+
     const groupResponse = await groupsApi.getNumbersinGroup(pool, group);
     for (const groupNumber of groupResponse.data) {
       const number = groupNumber.phone_number;
@@ -39,15 +61,18 @@ exports.sendMessage = async (pool, userId, text, groups, individuals) => {
       group,
     ]);
   }
-  
+
   for (const id of individuals) {
     const number = (await contactsApi.getContactPhone(pool, id)).data[0]
     .phone_number;
     numbers.add(number);
-    await execQuery(pool, MESSAGE_CONTACT_ADD, [
-      messageAdded.data.insertId,
-      id,
-    ]);
+    if (!loggedContacts.has(Number(id)) && !loggedContacts.has(id)) {
+      loggedContacts.add(id);
+      await execQuery(pool, MESSAGE_CONTACT_ADD, [
+        messageAdded.data.insertId,
+        id,
+      ]);
+    }
   }
   
   let binding = [];

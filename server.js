@@ -141,15 +141,22 @@ authRouter.get("/api/groups/insequence", async (req, res) => {
   res.send(response_data);
 });
 
-authRouter.get(
-  "/api/group/:group/contacts",
-  async ({ params: { group: group } }, res) => {
-    const response_data = await groups.getContactsInGroup(pool, group);
-    res.send(response_data);
+authRouter.get("/api/group/:group/contacts", async (req, res) => {
+  const group = req.params.group;
+  // The dynamic "enabled senders" group is admin-only.
+  if (String(group) === groups.SENDERS_GROUP_ID && !auth.hasAdminRole(req)) {
+    return res.status(403).send({ code: 403, error: "Forbidden" });
   }
-);
+  const response_data = await groups.getContactsInGroup(pool, group);
+  res.send(response_data);
+});
 
 authRouter.get("/api/groups/contacts", async (req, res) => {
+  const requestedGroups = String(req.query.groups || "").split(",");
+  // The dynamic "enabled senders" group is admin-only.
+  if (requestedGroups.includes(groups.SENDERS_GROUP_ID) && !auth.hasAdminRole(req)) {
+    return res.status(403).send({ code: 403, error: "Forbidden" });
+  }
   const response_data = await groups.getContactsInMultipleGroups(
     pool,
     req.query.groups
@@ -326,6 +333,16 @@ authRouter.post(
 );
 
 authRouter.post("/api/messages/send", async (req, res) => {
+  // The dynamic "enabled senders" group is admin-only; block non-admins from
+  // sending to it even if they craft the request directly.
+  const requestedGroups = Array.isArray(req.body.groups) ? req.body.groups : [];
+  if (
+    requestedGroups.map(String).includes(groups.SENDERS_GROUP_ID) &&
+    !auth.hasAdminRole(req)
+  ) {
+    return res.status(403).send({ code: 403, error: "Forbidden" });
+  }
+
   // Derive local user id from Keycloak username
   const username = req.body.sessionInfo && req.body.sessionInfo.username;
   let userId;
