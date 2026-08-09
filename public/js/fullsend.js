@@ -1,3 +1,7 @@
+// Sentinel id for the dynamic, admin-only "enabled senders" recipient group.
+// Must match SENDERS_GROUP_ID in src/groups.js.
+const SENDERS_GROUP_ID = "senders";
+
 const safeJsonFetch = async (url, options = {}) => {
   try {
     const resp = await fetch(url, options);
@@ -187,7 +191,17 @@ const pageOnLoadFunctions = async () => {
                             <label class="form-check-label" for="recipientSwitch-${group.id}">${group.name}</label><br>
                             `;
   }
-  
+
+  // The "enabled senders" group is a dynamic, admin-only recipient group.
+  // Only expose the switch to admins; the server also enforces this.
+  if (await isAdmin()) {
+    document.getElementById(
+      "fullsendGroupRecipients"
+    ).innerHTML += `<input class="form-check-input recipientSwitch" type="checkbox" role="switch" value="${SENDERS_GROUP_ID}" data-category="Senders" id="recipientSwitch-${SENDERS_GROUP_ID}" onchange="handleSwitch();">
+                            <label class="form-check-label" for="recipientSwitch-${SENDERS_GROUP_ID}">Enabled senders</label><br>
+                            `;
+  }
+
   const contacts = await getContacts();
   
   for (const contact of contacts) {

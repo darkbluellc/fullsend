@@ -256,10 +256,11 @@ async function isLoggedIn(req, res, next) {
   }
 }
 
-function isAdmin(req, res, next) {
-  // sessionInfo.claims is normalized to access token claims in isLoggedIn
-  const claims = req.body.sessionInfo && req.body.sessionInfo.claims;
-  if (!claims) return res.status(403).send({ code: 403, error: "Forbidden" });
+// Returns true when the request's normalized claims include the admin role.
+// sessionInfo.claims is normalized to access token claims in isLoggedIn.
+function hasAdminRole(req) {
+  const claims = req.body && req.body.sessionInfo && req.body.sessionInfo.claims;
+  if (!claims) return false;
 
   const realmRoles = (claims.realm_access && claims.realm_access.roles) || [];
   const clientRoles = [];
@@ -279,8 +280,11 @@ function isAdmin(req, res, next) {
 
   const roles = [...realmRoles, ...clientRoles];
   const adminRole = (req.body.sessionInfo && req.body.sessionInfo.adminRole) || process.env.KEYCLOAK_ADMIN_ROLE || "admin";
-  if (roles.includes(adminRole)) return next();
+  return roles.includes(adminRole);
+}
 
+function isAdmin(req, res, next) {
+  if (hasAdminRole(req)) return next();
   return res.status(403).send({ code: 403, error: "Forbidden" });
 }
 
@@ -292,4 +296,5 @@ module.exports = {
   getLogoutUrl,
   isLoggedIn,
   isAdmin,
+  hasAdminRole,
 };
